@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f5f5f7;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hide inactive views */
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Dashboard styles */
+        .dashboard-header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .dashboard-header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #86868b;
+            font-size: 16px;
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .card-icon.doctors {
+            background: #e8f4fd;
+        }
+
+        .card-icon.visits {
+            background: #fef3e8;
+        }
+
+        .card-icon.medications {
+            background: #e8f8ef;
+        }
+
+        .card-content h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+        }
+
+        .card-content p {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .card-arrow {
+            margin-left: auto;
+            color: #c7c7cc;
+            font-size: 20px;
+        }
+
+        /* Page header styles */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e5e7;
+            margin-bottom: 20px;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #007aff;
+            padding: 8px;
+            margin: -8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #f0f0f0;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        /* Add button */
+        .add-button {
+            width: 100%;
+            padding: 16px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-button:hover {
+            background: #0056b3;
+        }
+
+        /* Doctor list */
+        .doctor-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .doctor-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .doctor-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .doctor-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+        }
+
+        .doctor-item p {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #86868b;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .form-group label .required {
+            color: #ff3b30;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e5e5e7;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #007aff;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            border: 1px solid #e5e5e7;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5e7;
+        }
+
+        .btn-danger {
+            background: #ff3b30;
+            color: white;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #d63129;
+        }
+
+        /* Detail view styles */
+        .detail-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .detail-row {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            color: #1d1d1f;
+        }
+
+        .detail-value.empty {
+            color: #c7c7cc;
+            font-style: italic;
+        }
+
+        .detail-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Visit list item styles */
+        .visit-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .visit-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .visit-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+        }
+
+        .visit-item .visit-date {
+            font-size: 14px;
+            color: #007aff;
+            margin-bottom: 4px;
+        }
+
+        .visit-item .visit-reason {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .visit-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Form select styles */
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e5e5e7;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e5e5e7;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .no-doctors-warning {
+            background: #fef3e8;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #8a6d3b;
+            font-size: 14px;
+        }
+
+        /* Medication list item styles */
+        .medication-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .medication-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .medication-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+        }
+
+        .medication-item .medication-dosage {
+            font-size: 14px;
+            color: #34c759;
+            font-weight: 500;
+        }
+
+        .medication-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Auth styles */
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .auth-header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .auth-header p {
+            color: #86868b;
+            font-size: 16px;
+        }
+
+        .auth-form {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .auth-footer a {
+            color: #007aff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Welcome header */
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .logout-button {
+            background: none;
+            border: none;
+            color: #007aff;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .logout-button:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login View -->
+        <div id="login-view" class="view active">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Health Hub</h1>
+                    <p>Your personal health records</p>
+                </div>
+
+                <div class="auth-form">
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="login-email" required placeholder="you@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="login-password" required placeholder="Enter your password">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Log In</button>
+                    </form>
+                </div>
+
+                <div class="auth-footer">
+                    Don't have an account? <a href="#" onclick="showView('signup'); return false;">Sign Up</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signup View -->
+        <div id="signup-view" class="view">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Health Hub</h1>
+                    <p>Create your account</p>
+                </div>
+
+                <div class="auth-form">
+                    <form id="signup-form" onsubmit="handleSignup(event)">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="signup-name" required placeholder="John Doe">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="signup-email" required placeholder="you@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="signup-password" required placeholder="Create a password">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                    </form>
+                </div>
+
+                <div class="auth-footer">
+                    Already have an account? <a href="#" onclick="showView('login'); return false;">Log In</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <header class="dashboard-header">
+                <div class="welcome-header">
+                    <span class="welcome-text" id="welcome-message">Welcome</span>
+                    <button class="logout-button" onclick="handleLogout()">Log Out</button>
+                </div>
+                <h1>Health Hub</h1>
+                <p class="subtitle">Your personal health records</p>
+            </header>
+
+            <div class="cards">
+                <div class="card" onclick="showView('doctors')">
+                    <div class="card-icon doctors">
+                        <span>👨‍⚕️</span>
+                    </div>
+                    <div class="card-content">
+                        <h2>My Doctors</h2>
+                        <p>Manage your healthcare providers</p>
+                    </div>
+                    <span class="card-arrow">›</span>
+                </div>
+
+                <div class="card" onclick="showView('visits')">
+                    <div class="card-icon visits">
+                        <span>📅</span>
+                    </div>
+                    <div class="card-content">
+                        <h2>My Visits</h2>
+                        <p>Track your appointments</p>
+                    </div>
+                    <span class="card-arrow">›</span>
+                </div>
+
+                <div class="card" onclick="showView('medications')">
+                    <div class="card-icon medications">
+                        <span>💊</span>
+                    </div>
+                    <div class="card-content">
+                        <h2>My Medications</h2>
+                        <p>View your prescriptions</p>
+                    </div>
+                    <span class="card-arrow">›</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctors List View -->
+        <div id="doctors-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <h1>My Doctors</h1>
+            </div>
+
+            <button class="add-button" onclick="showView('add-doctor')">+ Add Doctor</button>
+
+            <div id="doctor-list" class="doctor-list">
+                <!-- Doctors will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Doctor Detail View -->
+        <div id="doctor-detail-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('doctors')">←</button>
+                <h1 id="detail-doctor-name">Doctor Name</h1>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-row">
+                    <div class="detail-label">Full Name</div>
+                    <div class="detail-value" id="detail-name"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Specialty</div>
+                    <div class="detail-value" id="detail-specialty"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Practice / Clinic</div>
+                    <div class="detail-value" id="detail-practice"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value" id="detail-address"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Phone</div>
+                    <div class="detail-value" id="detail-phone"></div>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="editDoctor()">Edit</button>
+                <button class="btn btn-danger" onclick="deleteDoctor()">Delete</button>
+            </div>
+        </div>
+
+        <!-- Add Doctor Form View -->
+        <div id="add-doctor-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('doctors')">←</button>
+                <h1>Add Doctor</h1>
+            </div>
+
+            <form id="doctor-form" onsubmit="saveDoctor(event)">
+                <div class="form-group">
+                    <label>Doctor's Full Name <span class="required">*</span></label>
+                    <input type="text" id="doctor-name" required placeholder="Dr. John Smith">
+                </div>
+
+                <div class="form-group">
+                    <label>Practice/Clinic Name</label>
+                    <input type="text" id="doctor-practice" placeholder="City Medical Center">
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="doctor-address" placeholder="123 Main St, City, State">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="doctor-phone" placeholder="(555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label>Specialty</label>
+                    <input type="text" id="doctor-specialty" placeholder="Family Medicine">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showView('doctors')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Edit Doctor Form View -->
+        <div id="edit-doctor-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showDoctorDetail(currentDoctorId)">←</button>
+                <h1>Edit Doctor</h1>
+            </div>
+
+            <form id="edit-doctor-form" onsubmit="updateDoctor(event)">
+                <div class="form-group">
+                    <label>Doctor's Full Name <span class="required">*</span></label>
+                    <input type="text" id="edit-doctor-name" required placeholder="Dr. John Smith">
+                </div>
+
+                <div class="form-group">
+                    <label>Practice/Clinic Name</label>
+                    <input type="text" id="edit-doctor-practice" placeholder="City Medical Center">
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="edit-doctor-address" placeholder="123 Main St, City, State">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="edit-doctor-phone" placeholder="(555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label>Specialty</label>
+                    <input type="text" id="edit-doctor-specialty" placeholder="Family Medicine">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showDoctorDetail(currentDoctorId)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Visits List View -->
+        <div id="visits-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <h1>My Visits</h1>
+            </div>
+
+            <button class="add-button" onclick="showAddVisit()">+ Add Visit</button>
+
+            <div id="visit-list" class="visit-list">
+                <!-- Visits will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Add Visit Form View -->
+        <div id="add-visit-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('visits')">←</button>
+                <h1>Add Visit</h1>
+            </div>
+
+            <div id="no-doctors-warning" class="no-doctors-warning" style="display: none;">
+                You need to add a doctor first before creating a visit.
+            </div>
+
+            <form id="visit-form" onsubmit="saveVisit(event)">
+                <div class="form-group">
+                    <label>Doctor <span class="required">*</span></label>
+                    <select id="visit-doctor" required>
+                        <option value="">Select a doctor...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Visit Date <span class="required">*</span></label>
+                    <input type="date" id="visit-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason for Visit</label>
+                    <input type="text" id="visit-reason" placeholder="Annual checkup, follow-up, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Diagnosis</label>
+                    <input type="text" id="visit-diagnosis" placeholder="Diagnosis or findings">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes / Next Steps</label>
+                    <textarea id="visit-notes" placeholder="Additional notes, prescriptions, follow-up instructions..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showView('visits')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="save-visit-btn">Save</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Visit Detail View -->
+        <div id="visit-detail-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('visits')">←</button>
+                <h1>Visit Details</h1>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-row">
+                    <div class="detail-label">Doctor</div>
+                    <div class="detail-value" id="visit-detail-doctor"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Date</div>
+                    <div class="detail-value" id="visit-detail-date"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reason for Visit</div>
+                    <div class="detail-value" id="visit-detail-reason"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Diagnosis</div>
+                    <div class="detail-value" id="visit-detail-diagnosis"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Notes / Next Steps</div>
+                    <div class="detail-value" id="visit-detail-notes"></div>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="editVisit()">Edit</button>
+                <button class="btn btn-danger" onclick="deleteVisit()">Delete</button>
+            </div>
+        </div>
+
+        <!-- Edit Visit Form View -->
+        <div id="edit-visit-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showVisitDetail(currentVisitId)">←</button>
+                <h1>Edit Visit</h1>
+            </div>
+
+            <form id="edit-visit-form" onsubmit="updateVisit(event)">
+                <div class="form-group">
+                    <label>Doctor <span class="required">*</span></label>
+                    <select id="edit-visit-doctor" required>
+                        <option value="">Select a doctor...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Visit Date <span class="required">*</span></label>
+                    <input type="date" id="edit-visit-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason for Visit</label>
+                    <input type="text" id="edit-visit-reason" placeholder="Annual checkup, follow-up, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Diagnosis</label>
+                    <input type="text" id="edit-visit-diagnosis" placeholder="Diagnosis or findings">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes / Next Steps</label>
+                    <textarea id="edit-visit-notes" placeholder="Additional notes, prescriptions, follow-up instructions..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showVisitDetail(currentVisitId)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Medications List View -->
+        <div id="medications-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <h1>My Medications</h1>
+            </div>
+
+            <button class="add-button" onclick="showAddMedication()">+ Add Medication</button>
+
+            <div id="medication-list" class="medication-list">
+                <!-- Medications will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Add Medication Form View -->
+        <div id="add-medication-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('medications')">←</button>
+                <h1>Add Medication</h1>
+            </div>
+
+            <form id="medication-form" onsubmit="saveMedication(event)">
+                <div class="form-group">
+                    <label>Medication Name <span class="required">*</span></label>
+                    <input type="text" id="medication-name" required placeholder="Lisinopril, Metformin, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Dosage</label>
+                    <input type="text" id="medication-dosage" placeholder="10mg, 500mg, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Frequency</label>
+                    <input type="text" id="medication-frequency" placeholder="Once daily, Twice daily, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Prescribing Doctor</label>
+                    <select id="medication-doctor">
+                        <option value="">Select a doctor (optional)...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="medication-notes" placeholder="Take with food, side effects, refill info..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showView('medications')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Medication Detail View -->
+        <div id="medication-detail-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showView('medications')">←</button>
+                <h1>Medication Details</h1>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-row">
+                    <div class="detail-label">Medication Name</div>
+                    <div class="detail-value" id="medication-detail-name"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Dosage</div>
+                    <div class="detail-value" id="medication-detail-dosage"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Frequency</div>
+                    <div class="detail-value" id="medication-detail-frequency"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Prescribing Doctor</div>
+                    <div class="detail-value" id="medication-detail-doctor"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Notes</div>
+                    <div class="detail-value" id="medication-detail-notes"></div>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="btn btn-primary" onclick="editMedication()">Edit</button>
+                <button class="btn btn-danger" onclick="deleteMedication()">Delete</button>
+            </div>
+        </div>
+
+        <!-- Edit Medication Form View -->
+        <div id="edit-medication-view" class="view">
+            <div class="page-header">
+                <button class="back-button" onclick="showMedicationDetail(currentMedicationId)">←</button>
+                <h1>Edit Medication</h1>
+            </div>
+
+            <form id="edit-medication-form" onsubmit="updateMedication(event)">
+                <div class="form-group">
+                    <label>Medication Name <span class="required">*</span></label>
+                    <input type="text" id="edit-medication-name" required placeholder="Lisinopril, Metformin, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Dosage</label>
+                    <input type="text" id="edit-medication-dosage" placeholder="10mg, 500mg, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Frequency</label>
+                    <input type="text" id="edit-medication-frequency" placeholder="Once daily, Twice daily, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Prescribing Doctor</label>
+                    <select id="edit-medication-doctor">
+                        <option value="">Select a doctor (optional)...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="edit-medication-notes" placeholder="Take with food, side effects, refill info..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="showMedicationDetail(currentMedicationId)">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data from localStorage
+        let doctors = JSON.parse(localStorage.getItem('healthhub_doctors')) || [];
+        let visits = JSON.parse(localStorage.getItem('healthhub_visits')) || [];
+        let medications = JSON.parse(localStorage.getItem('healthhub_medications')) || [];
+        let users = JSON.parse(localStorage.getItem('healthhub_users')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('healthhub_currentUser')) || null;
+        let currentDoctorId = null;
+        let currentVisitId = null;
+        let currentMedicationId = null;
+
+        // ==================== AUTH FUNCTIONS ====================
+
+        // Check if user is logged in on page load
+        function checkAuth() {
+            if (currentUser) {
+                updateWelcomeMessage();
+                showView('dashboard');
+            } else {
+                showView('login');
+            }
+        }
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
+                updateWelcomeMessage();
+                document.getElementById('login-form').reset();
+                showView('dashboard');
+            } else {
+                alert('Invalid email or password. Please try again or sign up for a new account.');
+            }
+        }
+
+        // Handle signup
+        function handleSignup(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            // Check if email already exists
+            if (users.find(u => u.email === email)) {
+                alert('An account with this email already exists. Please log in.');
+                return;
+            }
+
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                password: password
+            };
+
+            users.push(newUser);
+            localStorage.setItem('healthhub_users', JSON.stringify(users));
+
+            // Auto-login after signup
+            currentUser = newUser;
+            localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
+            updateWelcomeMessage();
+            document.getElementById('signup-form').reset();
+            showView('dashboard');
+        }
+
+        // Handle logout
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('healthhub_currentUser');
+            showView('login');
+        }
+
+        // Update welcome message
+        function updateWelcomeMessage() {
+            if (currentUser) {
+                document.getElementById('welcome-message').textContent = `Welcome, ${currentUser.name}`;
+            }
+        }
+
+        // Show a specific view
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+
+            // Show the requested view
+            document.getElementById(`${viewName}-view`).classList.add('active');
+
+            // If showing doctors view, render the list
+            if (viewName === 'doctors') {
+                renderDoctors();
+            }
+
+            // If showing add-doctor view, clear the form
+            if (viewName === 'add-doctor') {
+                document.getElementById('doctor-form').reset();
+            }
+
+            // If showing visits view, render the list
+            if (viewName === 'visits') {
+                renderVisits();
+            }
+
+            // If showing medications view, render the list
+            if (viewName === 'medications') {
+                renderMedications();
+            }
+        }
+
+        // Render the doctors list
+        function renderDoctors() {
+            const listContainer = document.getElementById('doctor-list');
+
+            if (doctors.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👨‍⚕️</div>
+                        <h3>No doctors yet</h3>
+                        <p>Add your first doctor to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = doctors.map(doctor => `
+                <div class="doctor-item" onclick="showDoctorDetail(${doctor.id})" style="cursor: pointer;">
+                    <h3>${doctor.name}</h3>
+                    <p>${doctor.specialty || 'No specialty listed'}</p>
+                </div>
+            `).join('');
+        }
+
+        // Save a new doctor
+        function saveDoctor(event) {
+            event.preventDefault();
+
+            const doctor = {
+                id: Date.now(),
+                name: document.getElementById('doctor-name').value,
+                practice: document.getElementById('doctor-practice').value,
+                address: document.getElementById('doctor-address').value,
+                phone: document.getElementById('doctor-phone').value,
+                specialty: document.getElementById('doctor-specialty').value
+            };
+
+            doctors.push(doctor);
+            localStorage.setItem('healthhub_doctors', JSON.stringify(doctors));
+
+            showView('doctors');
+        }
+
+        // Show doctor detail view
+        function showDoctorDetail(doctorId) {
+            const doctor = doctors.find(d => d.id === doctorId);
+            if (!doctor) return;
+
+            currentDoctorId = doctorId;
+
+            document.getElementById('detail-doctor-name').textContent = doctor.name;
+            document.getElementById('detail-name').textContent = doctor.name;
+
+            setDetailValue('detail-specialty', doctor.specialty);
+            setDetailValue('detail-practice', doctor.practice);
+            setDetailValue('detail-address', doctor.address);
+            setDetailValue('detail-phone', doctor.phone);
+
+            showView('doctor-detail');
+        }
+
+        // Helper to set detail value with empty state
+        function setDetailValue(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (value) {
+                element.textContent = value;
+                element.classList.remove('empty');
+            } else {
+                element.textContent = 'Not provided';
+                element.classList.add('empty');
+            }
+        }
+
+        // Edit doctor - populate form and show edit view
+        function editDoctor() {
+            const doctor = doctors.find(d => d.id === currentDoctorId);
+            if (!doctor) return;
+
+            document.getElementById('edit-doctor-name').value = doctor.name;
+            document.getElementById('edit-doctor-practice').value = doctor.practice || '';
+            document.getElementById('edit-doctor-address').value = doctor.address || '';
+            document.getElementById('edit-doctor-phone').value = doctor.phone || '';
+            document.getElementById('edit-doctor-specialty').value = doctor.specialty || '';
+
+            showView('edit-doctor');
+        }
+
+        // Update doctor with new values
+        function updateDoctor(event) {
+            event.preventDefault();
+
+            const doctorIndex = doctors.findIndex(d => d.id === currentDoctorId);
+            if (doctorIndex === -1) return;
+
+            doctors[doctorIndex] = {
+                id: currentDoctorId,
+                name: document.getElementById('edit-doctor-name').value,
+                practice: document.getElementById('edit-doctor-practice').value,
+                address: document.getElementById('edit-doctor-address').value,
+                phone: document.getElementById('edit-doctor-phone').value,
+                specialty: document.getElementById('edit-doctor-specialty').value
+            };
+
+            localStorage.setItem('healthhub_doctors', JSON.stringify(doctors));
+            showView('doctors');
+        }
+
+        // Delete doctor with confirmation
+        function deleteDoctor() {
+            const doctor = doctors.find(d => d.id === currentDoctorId);
+            if (!doctor) return;
+
+            if (confirm(`Are you sure you want to delete ${doctor.name}?`)) {
+                doctors = doctors.filter(d => d.id !== currentDoctorId);
+                localStorage.setItem('healthhub_doctors', JSON.stringify(doctors));
+                currentDoctorId = null;
+                showView('doctors');
+            }
+        }
+
+        // ==================== VISITS FUNCTIONS ====================
+
+        // Render the visits list
+        function renderVisits() {
+            const listContainer = document.getElementById('visit-list');
+
+            if (visits.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <h3>No visits yet</h3>
+                        <p>Add your first visit to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort visits by date (most recent first)
+            const sortedVisits = [...visits].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            listContainer.innerHTML = sortedVisits.map(visit => {
+                const doctor = doctors.find(d => d.id === visit.doctorId);
+                const doctorName = doctor ? doctor.name : 'Unknown Doctor';
+                const formattedDate = formatDate(visit.date);
+
+                return `
+                    <div class="visit-item" onclick="showVisitDetail(${visit.id})">
+                        <h3>${doctorName}</h3>
+                        <div class="visit-date">${formattedDate}</div>
+                        <div class="visit-reason">${visit.reason || 'No reason listed'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Populate doctor dropdown
+        function populateDoctorDropdown(selectId, selectedDoctorId = null) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select a doctor...</option>';
+
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.id;
+                option.textContent = doctor.name + (doctor.specialty ? ` (${doctor.specialty})` : '');
+                if (doctor.id === selectedDoctorId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        // Show add visit form
+        function showAddVisit() {
+            document.getElementById('visit-form').reset();
+            populateDoctorDropdown('visit-doctor');
+
+            // Show warning if no doctors exist
+            const warning = document.getElementById('no-doctors-warning');
+            const saveBtn = document.getElementById('save-visit-btn');
+
+            if (doctors.length === 0) {
+                warning.style.display = 'block';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+            } else {
+                warning.style.display = 'none';
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
+            }
+
+            // Set default date to today
+            document.getElementById('visit-date').valueAsDate = new Date();
+
+            showView('add-visit');
+        }
+
+        // Save a new visit
+        function saveVisit(event) {
+            event.preventDefault();
+
+            const visit = {
+                id: Date.now(),
+                doctorId: parseInt(document.getElementById('visit-doctor').value),
+                date: document.getElementById('visit-date').value,
+                reason: document.getElementById('visit-reason').value,
+                diagnosis: document.getElementById('visit-diagnosis').value,
+                notes: document.getElementById('visit-notes').value
+            };
+
+            visits.push(visit);
+            localStorage.setItem('healthhub_visits', JSON.stringify(visits));
+
+            showView('visits');
+        }
+
+        // Show visit detail view
+        function showVisitDetail(visitId) {
+            const visit = visits.find(v => v.id === visitId);
+            if (!visit) return;
+
+            currentVisitId = visitId;
+
+            const doctor = doctors.find(d => d.id === visit.doctorId);
+            const doctorName = doctor ? doctor.name : 'Unknown Doctor';
+
+            document.getElementById('visit-detail-doctor').textContent = doctorName;
+            document.getElementById('visit-detail-date').textContent = formatDate(visit.date);
+
+            setDetailValue('visit-detail-reason', visit.reason);
+            setDetailValue('visit-detail-diagnosis', visit.diagnosis);
+            setDetailValue('visit-detail-notes', visit.notes);
+
+            showView('visit-detail');
+        }
+
+        // Edit visit - populate form and show edit view
+        function editVisit() {
+            const visit = visits.find(v => v.id === currentVisitId);
+            if (!visit) return;
+
+            populateDoctorDropdown('edit-visit-doctor', visit.doctorId);
+            document.getElementById('edit-visit-date').value = visit.date;
+            document.getElementById('edit-visit-reason').value = visit.reason || '';
+            document.getElementById('edit-visit-diagnosis').value = visit.diagnosis || '';
+            document.getElementById('edit-visit-notes').value = visit.notes || '';
+
+            showView('edit-visit');
+        }
+
+        // Update visit with new values
+        function updateVisit(event) {
+            event.preventDefault();
+
+            const visitIndex = visits.findIndex(v => v.id === currentVisitId);
+            if (visitIndex === -1) return;
+
+            visits[visitIndex] = {
+                id: currentVisitId,
+                doctorId: parseInt(document.getElementById('edit-visit-doctor').value),
+                date: document.getElementById('edit-visit-date').value,
+                reason: document.getElementById('edit-visit-reason').value,
+                diagnosis: document.getElementById('edit-visit-diagnosis').value,
+                notes: document.getElementById('edit-visit-notes').value
+            };
+
+            localStorage.setItem('healthhub_visits', JSON.stringify(visits));
+            showView('visits');
+        }
+
+        // Delete visit with confirmation
+        function deleteVisit() {
+            const visit = visits.find(v => v.id === currentVisitId);
+            if (!visit) return;
+
+            const doctor = doctors.find(d => d.id === visit.doctorId);
+            const doctorName = doctor ? doctor.name : 'Unknown Doctor';
+
+            if (confirm(`Are you sure you want to delete the visit with ${doctorName} on ${formatDate(visit.date)}?`)) {
+                visits = visits.filter(v => v.id !== currentVisitId);
+                localStorage.setItem('healthhub_visits', JSON.stringify(visits));
+                currentVisitId = null;
+                showView('visits');
+            }
+        }
+
+        // ==================== MEDICATIONS FUNCTIONS ====================
+
+        // Render the medications list
+        function renderMedications() {
+            const listContainer = document.getElementById('medication-list');
+
+            if (medications.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💊</div>
+                        <h3>No medications yet</h3>
+                        <p>Add your first medication to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort medications alphabetically by name
+            const sortedMedications = [...medications].sort((a, b) =>
+                a.name.localeCompare(b.name)
+            );
+
+            listContainer.innerHTML = sortedMedications.map(medication => {
+                return `
+                    <div class="medication-item" onclick="showMedicationDetail(${medication.id})">
+                        <h3>${medication.name}</h3>
+                        <div class="medication-dosage">${medication.dosage || 'No dosage specified'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Populate doctor dropdown for medications (with optional selection)
+        function populateMedicationDoctorDropdown(selectId, selectedDoctorId = null) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select a doctor (optional)...</option>';
+
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.id;
+                option.textContent = doctor.name + (doctor.specialty ? ` (${doctor.specialty})` : '');
+                if (doctor.id === selectedDoctorId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        // Show add medication form
+        function showAddMedication() {
+            document.getElementById('medication-form').reset();
+            populateMedicationDoctorDropdown('medication-doctor');
+            showView('add-medication');
+        }
+
+        // Save a new medication
+        function saveMedication(event) {
+            event.preventDefault();
+
+            const doctorValue = document.getElementById('medication-doctor').value;
+
+            const medication = {
+                id: Date.now(),
+                name: document.getElementById('medication-name').value,
+                dosage: document.getElementById('medication-dosage').value,
+                frequency: document.getElementById('medication-frequency').value,
+                doctorId: doctorValue ? parseInt(doctorValue) : null,
+                notes: document.getElementById('medication-notes').value
+            };
+
+            medications.push(medication);
+            localStorage.setItem('healthhub_medications', JSON.stringify(medications));
+
+            showView('medications');
+        }
+
+        // Show medication detail view
+        function showMedicationDetail(medicationId) {
+            const medication = medications.find(m => m.id === medicationId);
+            if (!medication) return;
+
+            currentMedicationId = medicationId;
+
+            document.getElementById('medication-detail-name').textContent = medication.name;
+
+            setDetailValue('medication-detail-dosage', medication.dosage);
+            setDetailValue('medication-detail-frequency', medication.frequency);
+
+            if (medication.doctorId) {
+                const doctor = doctors.find(d => d.id === medication.doctorId);
+                setDetailValue('medication-detail-doctor', doctor ? doctor.name : 'Unknown Doctor');
+            } else {
+                setDetailValue('medication-detail-doctor', null);
+            }
+
+            setDetailValue('medication-detail-notes', medication.notes);
+
+            showView('medication-detail');
+        }
+
+        // Edit medication - populate form and show edit view
+        function editMedication() {
+            const medication = medications.find(m => m.id === currentMedicationId);
+            if (!medication) return;
+
+            document.getElementById('edit-medication-name').value = medication.name;
+            document.getElementById('edit-medication-dosage').value = medication.dosage || '';
+            document.getElementById('edit-medication-frequency').value = medication.frequency || '';
+            populateMedicationDoctorDropdown('edit-medication-doctor', medication.doctorId);
+            document.getElementById('edit-medication-notes').value = medication.notes || '';
+
+            showView('edit-medication');
+        }
+
+        // Update medication with new values
+        function updateMedication(event) {
+            event.preventDefault();
+
+            const medicationIndex = medications.findIndex(m => m.id === currentMedicationId);
+            if (medicationIndex === -1) return;
+
+            const doctorValue = document.getElementById('edit-medication-doctor').value;
+
+            medications[medicationIndex] = {
+                id: currentMedicationId,
+                name: document.getElementById('edit-medication-name').value,
+                dosage: document.getElementById('edit-medication-dosage').value,
+                frequency: document.getElementById('edit-medication-frequency').value,
+                doctorId: doctorValue ? parseInt(doctorValue) : null,
+                notes: document.getElementById('edit-medication-notes').value
+            };
+
+            localStorage.setItem('healthhub_medications', JSON.stringify(medications));
+            showView('medications');
+        }
+
+        // Delete medication with confirmation
+        function deleteMedication() {
+            const medication = medications.find(m => m.id === currentMedicationId);
+            if (!medication) return;
+
+            if (confirm(`Are you sure you want to delete ${medication.name}?`)) {
+                medications = medications.filter(m => m.id !== currentMedicationId);
+                localStorage.setItem('healthhub_medications', JSON.stringify(medications));
+                currentMedicationId = null;
+                showView('medications');
+            }
+        }
+
+        // Initial render - check authentication
+        checkAuth();
+    </script>
+</body>
+</html>
