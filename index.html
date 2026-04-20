@@ -5,683 +5,1208 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Health Hub</title>
     <style>
+        :root {
+            --primary: #1B4D52;
+            --primary-hover: #133A3E;
+            --accent: #E89B7C;
+            --bg: #FFFFFF;
+            --bg-soft: #FDF4EE;
+            --text: #1A2A2C;
+            --text-secondary: #5C6B6D;
+            --border: #E8E2DD;
+            --success: #4A7C5A;
+            --error: #C85A4A;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background-color: #f5f5f7;
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-size: 16px;
+            line-height: 1.6;
         }
 
-        .container {
-            max-width: 400px;
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* Top brand bar (shown across authenticated screens) */
+        .topbar {
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-inner {
+            max-width: 1080px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            position: relative;
         }
 
-        /* Hide inactive views */
-        .view {
-            display: none;
+        @media (max-width: 600px) {
+            .topbar-inner { padding: 14px 20px; }
         }
 
-        .view.active {
+        .brand-trigger {
+            background: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            padding: 8px 12px 8px 8px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-family: inherit;
+            transition: background 200ms ease, border-color 200ms ease;
+        }
+
+        .brand-trigger:hover {
+            background: var(--bg-soft);
+        }
+
+        .brand-trigger[aria-expanded="true"] {
+            background: var(--bg-soft);
+            border-color: var(--border);
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+        }
+
+        .hamburger {
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 20px;
+            height: 14px;
+            margin-left: 2px;
+        }
+
+        .hamburger span {
+            display: block;
+            height: 2px;
+            width: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            transition: transform 200ms ease, opacity 200ms ease;
+        }
+
+        .brand-trigger[aria-expanded="true"] .hamburger span:nth-child(1) {
+            transform: translateY(6px) rotate(45deg);
+        }
+
+        .brand-trigger[aria-expanded="true"] .hamburger span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .brand-trigger[aria-expanded="true"] .hamburger span:nth-child(3) {
+            transform: translateY(-6px) rotate(-45deg);
+        }
+
+        /* Dropdown menu */
+        .brand-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 24px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 12px 40px rgba(27, 77, 82, 0.12);
+            min-width: 240px;
+            padding: 8px;
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: opacity 180ms ease, transform 180ms ease;
+            z-index: 100;
+        }
+
+        .brand-menu.open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        @media (max-width: 600px) {
+            .brand-menu { left: 16px; right: 16px; min-width: 0; }
+        }
+
+        .brand-menu button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 11px 14px;
+            font-size: 15px;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: background 200ms ease, color 200ms ease;
+        }
+
+        .brand-menu button:hover {
+            background: var(--bg-soft);
+            color: var(--primary);
+        }
+
+        .brand-menu button.active {
+            color: var(--primary);
+            background: var(--bg-soft);
+            font-weight: 600;
+        }
+
+        .brand-menu .menu-separator {
+            height: 1px;
+            background: var(--border);
+            margin: 6px 4px;
+        }
+
+        .brand-menu button.menu-logout {
+            color: var(--error);
+        }
+
+        .brand-menu button.menu-logout:hover {
+            background: rgba(200, 90, 74, 0.08);
+            color: var(--error);
+        }
+
+        /* Layout container */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 24px 20px 48px; }
+            .topbar-inner { padding: 16px 20px; }
+        }
+
+        /* Views */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* ================= AUTH ================= */
+        .auth-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-shell::before {
+            content: "";
+            position: absolute;
+            top: -160px;
+            right: -160px;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(232, 155, 124, 0.35), rgba(232, 155, 124, 0) 70%);
+            pointer-events: none;
+        }
+
+        .auth-shell::after {
+            content: "";
+            position: absolute;
+            bottom: -180px;
+            left: -120px;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(27, 77, 82, 0.18), rgba(27, 77, 82, 0) 70%);
+            pointer-events: none;
+        }
+
+        .auth-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 460px;
+            margin: 0 auto;
+            padding: 56px 24px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 56px;
+            text-align: center;
+            letter-spacing: -0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            align-self: center;
+        }
+
+        .auth-brand::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .auth-header {
+            margin-bottom: 36px;
+            text-align: left;
+        }
+
+        .auth-eyebrow {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            background: rgba(27, 77, 82, 0.08);
+            padding: 6px 12px;
+            border-radius: 999px;
+            margin-bottom: 20px;
+        }
+
+        .auth-header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 14px;
+            letter-spacing: -0.025em;
+            line-height: 1.05;
+        }
+
+        .auth-header h1 .accent-dot {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .auth-header h1 { font-size: 38px; }
+            .auth-container { padding: 40px 20px; }
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 17px;
+            max-width: 380px;
+        }
+
+        .auth-form {
+            display: block;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 12px 40px rgba(27, 77, 82, 0.08);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 28px;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ================= DASHBOARD ================= */
+        .hero-band {
+            background: var(--bg-soft);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-band::before {
+            content: "";
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(232, 155, 124, 0.32), rgba(232, 155, 124, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hero-band-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 64px 32px 40px;
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 48px;
+            align-items: start;
+        }
+
+        .hero-illustration {
+            width: 410px;
+            max-width: 100%;
+            justify-self: end;
+            margin-top: 24px;
+        }
+
+        .hero-illustration svg {
+            width: 100%;
+            height: auto;
             display: block;
         }
 
-        /* Dashboard styles */
-        .dashboard-header {
-            text-align: center;
-            padding: 40px 0;
+        @media (max-width: 900px) {
+            .hero-band-inner {
+                grid-template-columns: 1fr;
+            }
+            .hero-illustration {
+                display: none;
+            }
         }
 
-        .dashboard-header h1 {
-            font-size: 32px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 8px;
+        .hero-eyebrow {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            background: rgba(27, 77, 82, 0.08);
+            padding: 6px 12px;
+            border-radius: 999px;
+            margin-bottom: 20px;
         }
 
-        .subtitle {
-            color: #86868b;
-            font-size: 16px;
+        .dashboard-hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.03em;
+            line-height: 1.02;
+            margin-bottom: 16px;
+            max-width: 720px;
+        }
+
+        .dashboard-hero h1 .accent-dot {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-hero h1 { font-size: 38px; }
+            .hero-band-inner { padding: 40px 20px 48px; }
+        }
+
+        .dashboard-hero p {
+            color: var(--text-secondary);
+            font-size: 18px;
+            max-width: 560px;
+            line-height: 1.55;
+        }
+
+        .cards-section {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 32px 32px 72px;
+        }
+
+        @media (max-width: 600px) {
+            .cards-section { padding: 24px 20px 48px; }
+        }
+
+        .cards-heading {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 20px;
         }
 
         .cards {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 820px) {
+            .cards { grid-template-columns: 1fr; }
         }
 
         .card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            gap: 20px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
             text-decoration: none;
             color: inherit;
+            transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+            position: relative;
+            min-height: 220px;
         }
 
         .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        .card:active {
-            transform: scale(0.98);
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 32px rgba(27, 77, 82, 0.10);
         }
 
         .card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            flex-shrink: 0;
+            border-radius: 14px;
+            background: var(--bg-soft);
+            color: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
         }
 
-        .card-icon.doctors {
-            background: #e8f4fd;
+        .card.card-coral .card-icon {
+            background: rgba(232, 155, 124, 0.18);
+            color: #B5664A;
         }
 
-        .card-icon.visits {
-            background: #fef3e8;
+        .card.card-teal .card-icon {
+            background: rgba(27, 77, 82, 0.10);
+            color: var(--primary);
         }
 
-        .card-icon.medications {
-            background: #e8f8ef;
+        .card.card-peach .card-icon {
+            background: var(--bg-soft);
+            color: var(--primary);
         }
+
+        .card-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: currentColor;
+            stroke-width: 1.75;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .card-content { flex: 1; display: flex; flex-direction: column; }
 
         .card-content h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 4px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.015em;
         }
 
         .card-content p {
-            font-size: 14px;
-            color: #86868b;
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.5;
         }
 
-        .card-arrow {
-            margin-left: auto;
-            color: #c7c7cc;
-            font-size: 20px;
+        .card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: auto;
+            padding-top: 16px;
         }
 
-        /* Page header styles */
+        .card-cta::after {
+            content: "→";
+            transition: transform 200ms ease;
+        }
+
+        .card:hover .card-cta::after {
+            transform: translateX(4px);
+        }
+
+        /* ================= PAGE HEADER (sub-pages) ================= */
         .page-header {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
             gap: 16px;
-            padding: 20px 0;
-            border-bottom: 1px solid #e5e5e7;
-            margin-bottom: 20px;
         }
 
         .back-button {
-            background: none;
-            border: none;
-            font-size: 24px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            color: #007aff;
-            padding: 8px;
-            margin: -8px;
-            border-radius: 8px;
-            transition: background 0.2s;
+            color: var(--primary);
+            padding: 8px 14px 8px 10px;
+            border-radius: 999px;
+            transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+            font-family: inherit;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .back-button:hover {
-            background: #f0f0f0;
+            background: var(--bg);
+            border-color: var(--primary);
         }
 
         .page-header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #1d1d1f;
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.025em;
+            line-height: 1.1;
         }
 
-        /* Add button */
-        .add-button {
-            width: 100%;
-            padding: 16px;
-            background: #007aff;
-            color: white;
-            border: none;
-            border-radius: 12px;
+        @media (max-width: 600px) {
+            .page-header h1 { font-size: 30px; }
+            .subpage-band-inner { padding: 24px 20px 32px; }
+        }
+
+        /* ================= BUTTONS ================= */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease;
+            border: 1px solid transparent;
+            line-height: 1.2;
         }
 
-        .add-button:hover {
-            background: #0056b3;
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
         }
 
-        /* Doctor list */
-        .doctor-list {
-            margin-top: 20px;
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--bg);
+            color: var(--error);
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger:hover {
+            background: var(--error);
+            color: #fff;
+            border-color: var(--error);
+        }
+
+        .btn-block {
+            display: flex;
+            width: 100%;
+        }
+
+        /* Add (primary) button used at top of list views */
+        .add-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 200ms ease, transform 200ms ease;
+        }
+
+        .add-button::before {
+            content: "+";
+            font-size: 16px;
+            line-height: 1;
+            font-weight: 400;
+        }
+
+        .add-button:hover { background: var(--primary-hover); }
+
+        .add-button-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-top: 28px;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+
+        .add-button-row .row-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        /* ================= LISTS ================= */
+        .list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
         }
 
-        .doctor-item {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        .list-item {
+            padding: 22px 24px;
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: background 200ms ease;
+            position: relative;
         }
 
-        .doctor-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        .list-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 200ms ease;
         }
 
-        .doctor-item h3 {
-            font-size: 16px;
+        .list-item:last-child { border-bottom: none; }
+
+        .list-item:hover {
+            background: var(--bg-soft);
+        }
+
+        .list-item:hover::before {
+            opacity: 1;
+        }
+
+        .list-item-main { flex: 1; min-width: 0; }
+
+        .list-item h3 {
+            font-size: 18px;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--text);
             margin-bottom: 4px;
+            letter-spacing: -0.01em;
         }
 
-        .doctor-item p {
+        .list-item .meta {
             font-size: 14px;
-            color: #86868b;
+            color: var(--text-secondary);
         }
 
+        .list-item .accent {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .list-item .chev {
+            color: var(--text-secondary);
+            font-size: 22px;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: color 200ms ease, transform 200ms ease;
+        }
+
+        .list-item:hover .chev {
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        /* ================= EMPTY STATE ================= */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #86868b;
+            padding: 64px 32px;
+            background: var(--bg-soft);
+            border-radius: 20px;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
 
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+        .empty-state::before {
+            content: "";
+            position: absolute;
+            top: -80px;
+            right: -80px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(232, 155, 124, 0.30), rgba(232, 155, 124, 0) 70%);
+            pointer-events: none;
+        }
+
+        .empty-state-content {
+            position: relative;
+            z-index: 1;
         }
 
         .empty-state h3 {
-            font-size: 18px;
-            color: #1d1d1f;
-            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            letter-spacing: -0.015em;
         }
 
-        /* Form styles */
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 360px;
+            margin: 0 auto;
+            line-height: 1.55;
+        }
+
+        /* ================= FORMS ================= */
+        .form { display: block; }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
             font-size: 14px;
-            font-weight: 500;
-            color: #1d1d1f;
+            font-weight: 600;
+            color: var(--text);
             margin-bottom: 8px;
+            letter-spacing: -0.005em;
         }
 
         .form-group label .required {
-            color: #ff3b30;
+            color: var(--error);
+            margin-left: 2px;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #e5e5e7;
-            border-radius: 10px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--bg);
+            transition: border-color 200ms ease, box-shadow 200ms ease;
         }
 
-        .form-group input:focus {
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #A8B0B1;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
-            border-color: #007aff;
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27, 77, 82, 0.12);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C6B6D' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
         }
 
         .form-actions {
             display: flex;
             gap: 12px;
-            margin-top: 32px;
+            margin-top: 36px;
+            justify-content: flex-end;
         }
 
-        .btn {
-            flex: 1;
-            padding: 16px;
+        .form-actions .btn {
+            min-width: 120px;
+        }
+
+        @media (max-width: 600px) {
+            .form-actions { flex-direction: column-reverse; }
+            .form-actions .btn { width: 100%; }
+        }
+
+        .form-warning {
+            background: var(--bg-soft);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            color: var(--text);
+            font-size: 15px;
         }
 
-        .btn-primary {
-            background: #007aff;
-            color: white;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background: #0056b3;
-        }
-
-        .btn-secondary {
-            background: #f5f5f7;
-            color: #1d1d1f;
-            border: 1px solid #e5e5e7;
-        }
-
-        .btn-secondary:hover {
-            background: #e5e5e7;
-        }
-
-        .btn-danger {
-            background: #ff3b30;
-            color: white;
-            border: none;
-        }
-
-        .btn-danger:hover {
-            background: #d63129;
-        }
-
-        /* Detail view styles */
+        /* ================= DETAIL VIEW ================= */
         .detail-section {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 8px 28px;
+            margin-bottom: 28px;
         }
 
         .detail-row {
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 22px 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .detail-row:last-child {
-            border-bottom: none;
-        }
+        .detail-row:last-child { border-bottom: none; }
 
         .detail-label {
             font-size: 12px;
-            color: #86868b;
+            color: var(--accent);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
         .detail-value {
-            font-size: 16px;
-            color: #1d1d1f;
+            font-size: 17px;
+            color: var(--text);
+            line-height: 1.5;
         }
 
         .detail-value.empty {
-            color: #c7c7cc;
+            color: var(--text-secondary);
             font-style: italic;
         }
 
         .detail-actions {
             display: flex;
-            flex-direction: column;
             gap: 12px;
-            margin-top: 24px;
+            justify-content: flex-end;
         }
 
-        /* Visit list item styles */
-        .visit-item {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .visit-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .visit-item h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 4px;
-        }
-
-        .visit-item .visit-date {
-            font-size: 14px;
-            color: #007aff;
-            margin-bottom: 4px;
-        }
-
-        .visit-item .visit-reason {
-            font-size: 14px;
-            color: #86868b;
-        }
-
-        .visit-list {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* Form select styles */
-        .form-group select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #e5e5e7;
-            border-radius: 10px;
-            font-size: 16px;
-            background: white;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-        }
-
-        .form-group select:focus {
-            outline: none;
-            border-color: #007aff;
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-        }
-
-        .form-group textarea {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #e5e5e7;
-            border-radius: 10px;
-            font-size: 16px;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 80px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #007aff;
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-        }
-
-        .no-doctors-warning {
-            background: #fef3e8;
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 20px;
-            color: #8a6d3b;
-            font-size: 14px;
-        }
-
-        /* Medication list item styles */
-        .medication-item {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .medication-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .medication-item h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 4px;
-        }
-
-        .medication-item .medication-dosage {
-            font-size: 14px;
-            color: #34c759;
-            font-weight: 500;
-        }
-
-        .medication-list {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* Auth styles */
-        .auth-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .auth-header h1 {
-            font-size: 36px;
-            font-weight: 700;
-            color: #1d1d1f;
-            margin-bottom: 8px;
-        }
-
-        .auth-header p {
-            color: #86868b;
-            font-size: 16px;
-        }
-
-        .auth-form {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .auth-footer {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 14px;
-            color: #86868b;
-        }
-
-        .auth-footer a {
-            color: #007aff;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .auth-footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Welcome header */
-        .welcome-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .welcome-text {
-            font-size: 14px;
-            color: #86868b;
-        }
-
-        .logout-button {
-            background: none;
-            border: none;
-            color: #007aff;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-
-        .logout-button:hover {
-            background: #f0f0f0;
+        @media (max-width: 600px) {
+            .detail-actions { flex-direction: column-reverse; }
+            .detail-actions .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Login View -->
-        <div id="login-view" class="view active">
+    <!-- Global topbar (hidden on auth screens) -->
+    <div class="topbar" id="global-topbar" style="display: none;">
+        <div class="topbar-inner">
+            <button class="brand-trigger" id="brand-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="brand-menu" onclick="toggleMenu(event)">
+                <span class="brand">Health Hub</span>
+                <span class="hamburger" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                </span>
+            </button>
+
+            <div class="brand-menu" id="brand-menu" role="menu" aria-labelledby="brand-trigger">
+                <button type="button" role="menuitem" data-section="dashboard" onclick="navTo('dashboard')">Home</button>
+                <button type="button" role="menuitem" data-section="doctors" onclick="navTo('doctors')">My Doctors</button>
+                <button type="button" role="menuitem" data-section="visits" onclick="navTo('visits')">My Visits</button>
+                <button type="button" role="menuitem" data-section="medications" onclick="navTo('medications')">My Medications</button>
+                <div class="menu-separator" role="separator"></div>
+                <button type="button" role="menuitem" class="menu-logout" onclick="handleLogout()">Log out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" class="view active">
+        <div class="auth-shell">
             <div class="auth-container">
+                <div class="auth-brand">Health Hub</div>
+
                 <div class="auth-header">
-                    <h1>Health Hub</h1>
-                    <p>Your personal health records</p>
+                    <span class="auth-eyebrow">Sign in</span>
+                    <h1>Welcome back<span class="accent-dot">.</span></h1>
+                    <p>Log in to access your personal health records.</p>
                 </div>
 
-                <div class="auth-form">
-                    <form id="login-form" onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="login-email" required placeholder="you@example.com">
-                        </div>
+                <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" required placeholder="you@example.com" autocomplete="email">
+                    </div>
 
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" id="login-password" required placeholder="Enter your password">
-                        </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" required placeholder="Enter your password" autocomplete="current-password">
+                    </div>
 
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Log In</button>
-                    </form>
-                </div>
+                    <button type="submit" class="btn btn-primary btn-block">Log in</button>
+                </form>
 
                 <div class="auth-footer">
-                    Don't have an account? <a href="#" onclick="showView('signup'); return false;">Sign Up</a>
+                    Don't have an account? <a href="#" onclick="showView('signup'); return false;">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup View -->
+    <div id="signup-view" class="view">
+        <div class="auth-shell">
+            <div class="auth-container">
+                <div class="auth-brand">Health Hub</div>
+
+                <div class="auth-header">
+                    <span class="auth-eyebrow">Get started</span>
+                    <h1>Create your account<span class="accent-dot">.</span></h1>
+                    <p>Start keeping your health records in one place.</p>
+                </div>
+
+                <form id="signup-form" class="auth-form" onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label>Full name</label>
+                        <input type="text" id="signup-name" required placeholder="Jane Doe" autocomplete="name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="signup-email" required placeholder="you@example.com" autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signup-password" required placeholder="Create a password" autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Create account</button>
+                </form>
+
+                <div class="auth-footer">
+                    Already have an account? <a href="#" onclick="showView('login'); return false;">Log in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view">
+        <div class="hero-band">
+            <div class="hero-band-inner">
+                <header class="dashboard-hero">
+                    <span class="hero-eyebrow">Your health hub</span>
+                    <h1 id="welcome-message">Welcome back<span class="accent-dot">.</span></h1>
+                    <p>Your doctors, visits, and prescriptions — kept together and ready when you need them.</p>
+                </header>
+
+                <div class="hero-illustration" aria-hidden="true">
+                    <svg viewBox="0 30 360 290" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Soft ambient glow behind the scene -->
+                        <ellipse cx="200" cy="175" rx="170" ry="120" fill="#E89B7C" opacity="0.08"/>
+
+                        <!-- Framed landscape painting on the wall -->
+                        <g>
+                            <rect x="138" y="30" width="104" height="78" rx="4" fill="#FFFFFF" stroke="#1B4D52" stroke-width="1.5"/>
+                            <rect x="144" y="36" width="92" height="66" fill="#FDE4D6"/>
+                            <circle cx="210" cy="58" r="7" fill="#E89B7C"/>
+                            <path d="M144 82 Q170 62 196 78 T236 78 L236 102 L144 102 Z" fill="#4A7C5A"/>
+                            <path d="M144 92 Q166 82 190 88 T236 92 L236 102 L144 102 Z" fill="#1B4D52" opacity="0.85"/>
+                        </g>
+
+                        <!-- Potted plant (left) -->
+                        <g>
+                            <path d="M62 252 Q56 218 48 196" stroke="#1B4D52" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <path d="M62 252 Q66 218 76 196" stroke="#1B4D52" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <path d="M62 252 Q62 230 62 200" stroke="#1B4D52" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <ellipse cx="46" cy="188" rx="12" ry="20" fill="#4A7C5A" transform="rotate(-25 46 188)"/>
+                            <ellipse cx="78" cy="188" rx="12" ry="20" fill="#4A7C5A" transform="rotate(25 78 188)"/>
+                            <ellipse cx="62" cy="192" rx="11" ry="22" fill="#1B4D52"/>
+                            <path d="M40 252 L84 252 L80 288 L44 288 Z" fill="#E89B7C"/>
+                            <rect x="38" y="248" width="48" height="8" rx="2" fill="#B5664A"/>
+                        </g>
+
+                        <!-- Armchair (center) -->
+                        <g>
+                            <rect x="128" y="158" width="108" height="94" rx="18" fill="#E89B7C"/>
+                            <rect x="136" y="166" width="92" height="62" rx="12" fill="#F0AC8C"/>
+                            <rect x="112" y="196" width="22" height="66" rx="9" fill="#B5664A"/>
+                            <rect x="230" y="196" width="22" height="66" rx="9" fill="#B5664A"/>
+                            <rect x="122" y="226" width="120" height="38" rx="12" fill="#E89B7C"/>
+                            <rect x="176" y="178" width="44" height="34" rx="8" fill="#FDF4EE" stroke="#1B4D52" stroke-width="1.2"/>
+                            <rect x="120" y="262" width="6" height="14" rx="1" fill="#1A2A2C"/>
+                            <rect x="238" y="262" width="6" height="14" rx="1" fill="#1A2A2C"/>
+                        </g>
+
+                        <!-- Side table with table lamp (right) -->
+                        <g>
+                            <ellipse cx="298" cy="162" rx="44" ry="24" fill="#E89B7C" opacity="0.18"/>
+                            <path d="M278 142 L320 142 L314 178 L284 178 Z" fill="#FDE4D6" stroke="#E89B7C" stroke-width="1.5" stroke-linejoin="round"/>
+                            <rect x="297" y="178" width="3" height="32" fill="#1B4D52"/>
+                            <ellipse cx="298" cy="210" rx="34" ry="6" fill="#1B4D52"/>
+                            <rect x="264" y="210" width="68" height="44" fill="#1B4D52"/>
+                            <ellipse cx="298" cy="254" rx="34" ry="6" fill="#133A3E"/>
+                            <rect x="274" y="204" width="22" height="6" rx="1" fill="#E89B7C"/>
+                        </g>
+
+                        <!-- Floor line -->
+                        <line x1="12" y1="276" x2="348" y2="276" stroke="#E8E2DD" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Signup View -->
-        <div id="signup-view" class="view">
-            <div class="auth-container">
-                <div class="auth-header">
-                    <h1>Health Hub</h1>
-                    <p>Create your account</p>
-                </div>
-
-                <div class="auth-form">
-                    <form id="signup-form" onsubmit="handleSignup(event)">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="signup-name" required placeholder="John Doe">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="signup-email" required placeholder="you@example.com">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" id="signup-password" required placeholder="Create a password">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
-                    </form>
-                </div>
-
-                <div class="auth-footer">
-                    Already have an account? <a href="#" onclick="showView('login'); return false;">Log In</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="view">
-            <header class="dashboard-header">
-                <div class="welcome-header">
-                    <span class="welcome-text" id="welcome-message">Welcome</span>
-                    <button class="logout-button" onclick="handleLogout()">Log Out</button>
-                </div>
-                <h1>Health Hub</h1>
-                <p class="subtitle">Your personal health records</p>
-            </header>
-
+        <div class="cards-section">
+            <div class="cards-heading">Quick access</div>
             <div class="cards">
-                <div class="card" onclick="showView('doctors')">
-                    <div class="card-icon doctors">
-                        <span>👨‍⚕️</span>
+                <div class="card card-teal" onclick="showView('doctors')">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg>
                     </div>
                     <div class="card-content">
                         <h2>My Doctors</h2>
-                        <p>Manage your healthcare providers</p>
+                        <p>Manage your healthcare providers and their contact details.</p>
+                        <span class="card-cta">View doctors</span>
                     </div>
-                    <span class="card-arrow">›</span>
                 </div>
 
-                <div class="card" onclick="showView('visits')">
-                    <div class="card-icon visits">
-                        <span>📅</span>
+                <div class="card card-coral" onclick="showView('visits')">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>
                     </div>
                     <div class="card-content">
                         <h2>My Visits</h2>
-                        <p>Track your appointments</p>
+                        <p>Track appointments, diagnoses, and follow-up notes.</p>
+                        <span class="card-cta">View visits</span>
                     </div>
-                    <span class="card-arrow">›</span>
                 </div>
 
-                <div class="card" onclick="showView('medications')">
-                    <div class="card-icon medications">
-                        <span>💊</span>
+                <div class="card card-peach" onclick="showView('medications')">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="4" transform="rotate(-30 12 12)"></rect><path d="M8.5 5.5l7 12.1" transform="rotate(-30 12 12)"></path></svg>
                     </div>
                     <div class="card-content">
                         <h2>My Medications</h2>
-                        <p>View your prescriptions</p>
+                        <p>Keep prescriptions, dosages, and refill notes in one place.</p>
+                        <span class="card-cta">View medications</span>
                     </div>
-                    <span class="card-arrow">›</span>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Doctors List View -->
-        <div id="doctors-view" class="view">
+    <!-- Doctors List View -->
+    <div id="doctors-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Doctors</h1>
             </div>
 
-            <button class="add-button" onclick="showView('add-doctor')">+ Add Doctor</button>
+            <div class="add-button-row">
+                <button class="add-button" onclick="showView('add-doctor')">Add doctor</button>
+            </div>
 
-            <div id="doctor-list" class="doctor-list">
+            <div id="doctor-list">
                 <!-- Doctors will be rendered here -->
             </div>
         </div>
+    </div>
 
-        <!-- Doctor Detail View -->
-        <div id="doctor-detail-view" class="view">
+    <!-- Doctor Detail View -->
+    <div id="doctor-detail-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('doctors')">←</button>
-                <h1 id="detail-doctor-name">Doctor Name</h1>
+                <button class="back-button" onclick="showView('doctors')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1 id="detail-doctor-name">Doctor</h1>
             </div>
 
             <div class="detail-section">
                 <div class="detail-row">
-                    <div class="detail-label">Full Name</div>
+                    <div class="detail-label">Full name</div>
                     <div class="detail-value" id="detail-name"></div>
                 </div>
                 <div class="detail-row">
@@ -703,26 +1228,28 @@
             </div>
 
             <div class="detail-actions">
-                <button class="btn btn-primary" onclick="editDoctor()">Edit</button>
                 <button class="btn btn-danger" onclick="deleteDoctor()">Delete</button>
+                <button class="btn btn-primary" onclick="editDoctor()">Edit</button>
             </div>
         </div>
+    </div>
 
-        <!-- Add Doctor Form View -->
-        <div id="add-doctor-view" class="view">
+    <!-- Add Doctor Form View -->
+    <div id="add-doctor-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('doctors')">←</button>
-                <h1>Add Doctor</h1>
+                <button class="back-button" onclick="showView('doctors')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Add doctor</h1>
             </div>
 
-            <form id="doctor-form" onsubmit="saveDoctor(event)">
+            <form id="doctor-form" class="form" onsubmit="saveDoctor(event)">
                 <div class="form-group">
-                    <label>Doctor's Full Name <span class="required">*</span></label>
-                    <input type="text" id="doctor-name" required placeholder="Dr. John Smith">
+                    <label>Doctor's full name <span class="required">*</span></label>
+                    <input type="text" id="doctor-name" required placeholder="Dr. Jane Smith">
                 </div>
 
                 <div class="form-group">
-                    <label>Practice/Clinic Name</label>
+                    <label>Practice / Clinic name</label>
                     <input type="text" id="doctor-practice" placeholder="City Medical Center">
                 </div>
 
@@ -732,7 +1259,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Phone Number</label>
+                    <label>Phone number</label>
                     <input type="tel" id="doctor-phone" placeholder="(555) 123-4567">
                 </div>
 
@@ -747,22 +1274,24 @@
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Edit Doctor Form View -->
-        <div id="edit-doctor-view" class="view">
+    <!-- Edit Doctor Form View -->
+    <div id="edit-doctor-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showDoctorDetail(currentDoctorId)">←</button>
-                <h1>Edit Doctor</h1>
+                <button class="back-button" onclick="showDoctorDetail(currentDoctorId)" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Edit doctor</h1>
             </div>
 
-            <form id="edit-doctor-form" onsubmit="updateDoctor(event)">
+            <form id="edit-doctor-form" class="form" onsubmit="updateDoctor(event)">
                 <div class="form-group">
-                    <label>Doctor's Full Name <span class="required">*</span></label>
-                    <input type="text" id="edit-doctor-name" required placeholder="Dr. John Smith">
+                    <label>Doctor's full name <span class="required">*</span></label>
+                    <input type="text" id="edit-doctor-name" required placeholder="Dr. Jane Smith">
                 </div>
 
                 <div class="form-group">
-                    <label>Practice/Clinic Name</label>
+                    <label>Practice / Clinic name</label>
                     <input type="text" id="edit-doctor-practice" placeholder="City Medical Center">
                 </div>
 
@@ -772,7 +1301,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Phone Number</label>
+                    <label>Phone number</label>
                     <input type="tel" id="edit-doctor-phone" placeholder="(555) 123-4567">
                 </div>
 
@@ -783,37 +1312,43 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="showDoctorDetail(currentDoctorId)">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Visits List View -->
-        <div id="visits-view" class="view">
+    <!-- Visits List View -->
+    <div id="visits-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Visits</h1>
             </div>
 
-            <button class="add-button" onclick="showAddVisit()">+ Add Visit</button>
+            <div class="add-button-row">
+                <button class="add-button" onclick="showAddVisit()">Add visit</button>
+            </div>
 
-            <div id="visit-list" class="visit-list">
+            <div id="visit-list">
                 <!-- Visits will be rendered here -->
             </div>
         </div>
+    </div>
 
-        <!-- Add Visit Form View -->
-        <div id="add-visit-view" class="view">
+    <!-- Add Visit Form View -->
+    <div id="add-visit-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('visits')">←</button>
-                <h1>Add Visit</h1>
+                <button class="back-button" onclick="showView('visits')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Add visit</h1>
             </div>
 
-            <div id="no-doctors-warning" class="no-doctors-warning" style="display: none;">
-                You need to add a doctor first before creating a visit.
+            <div id="no-doctors-warning" class="form-warning" style="display: none;">
+                Add a doctor first before logging a visit.
             </div>
 
-            <form id="visit-form" onsubmit="saveVisit(event)">
+            <form id="visit-form" class="form" onsubmit="saveVisit(event)">
                 <div class="form-group">
                     <label>Doctor <span class="required">*</span></label>
                     <select id="visit-doctor" required>
@@ -822,12 +1357,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Visit Date <span class="required">*</span></label>
+                    <label>Visit date <span class="required">*</span></label>
                     <input type="date" id="visit-date" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Reason for Visit</label>
+                    <label>Reason for visit</label>
                     <input type="text" id="visit-reason" placeholder="Annual checkup, follow-up, etc.">
                 </div>
 
@@ -837,7 +1372,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Notes / Next Steps</label>
+                    <label>Notes / Next steps</label>
                     <textarea id="visit-notes" placeholder="Additional notes, prescriptions, follow-up instructions..."></textarea>
                 </div>
 
@@ -847,12 +1382,14 @@
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Visit Detail View -->
-        <div id="visit-detail-view" class="view">
+    <!-- Visit Detail View -->
+    <div id="visit-detail-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('visits')">←</button>
-                <h1>Visit Details</h1>
+                <button class="back-button" onclick="showView('visits')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Visit details</h1>
             </div>
 
             <div class="detail-section">
@@ -865,7 +1402,7 @@
                     <div class="detail-value" id="visit-detail-date"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Reason for Visit</div>
+                    <div class="detail-label">Reason for visit</div>
                     <div class="detail-value" id="visit-detail-reason"></div>
                 </div>
                 <div class="detail-row">
@@ -873,25 +1410,27 @@
                     <div class="detail-value" id="visit-detail-diagnosis"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Notes / Next Steps</div>
+                    <div class="detail-label">Notes / Next steps</div>
                     <div class="detail-value" id="visit-detail-notes"></div>
                 </div>
             </div>
 
             <div class="detail-actions">
-                <button class="btn btn-primary" onclick="editVisit()">Edit</button>
                 <button class="btn btn-danger" onclick="deleteVisit()">Delete</button>
+                <button class="btn btn-primary" onclick="editVisit()">Edit</button>
             </div>
         </div>
+    </div>
 
-        <!-- Edit Visit Form View -->
-        <div id="edit-visit-view" class="view">
+    <!-- Edit Visit Form View -->
+    <div id="edit-visit-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showVisitDetail(currentVisitId)">←</button>
-                <h1>Edit Visit</h1>
+                <button class="back-button" onclick="showVisitDetail(currentVisitId)" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Edit visit</h1>
             </div>
 
-            <form id="edit-visit-form" onsubmit="updateVisit(event)">
+            <form id="edit-visit-form" class="form" onsubmit="updateVisit(event)">
                 <div class="form-group">
                     <label>Doctor <span class="required">*</span></label>
                     <select id="edit-visit-doctor" required>
@@ -900,12 +1439,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Visit Date <span class="required">*</span></label>
+                    <label>Visit date <span class="required">*</span></label>
                     <input type="date" id="edit-visit-date" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Reason for Visit</label>
+                    <label>Reason for visit</label>
                     <input type="text" id="edit-visit-reason" placeholder="Annual checkup, follow-up, etc.">
                 </div>
 
@@ -915,41 +1454,47 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Notes / Next Steps</label>
+                    <label>Notes / Next steps</label>
                     <textarea id="edit-visit-notes" placeholder="Additional notes, prescriptions, follow-up instructions..."></textarea>
                 </div>
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="showVisitDetail(currentVisitId)">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Medications List View -->
-        <div id="medications-view" class="view">
+    <!-- Medications List View -->
+    <div id="medications-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')">←</button>
+                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Medications</h1>
             </div>
 
-            <button class="add-button" onclick="showAddMedication()">+ Add Medication</button>
+            <div class="add-button-row">
+                <button class="add-button" onclick="showAddMedication()">Add medication</button>
+            </div>
 
-            <div id="medication-list" class="medication-list">
+            <div id="medication-list">
                 <!-- Medications will be rendered here -->
             </div>
         </div>
+    </div>
 
-        <!-- Add Medication Form View -->
-        <div id="add-medication-view" class="view">
+    <!-- Add Medication Form View -->
+    <div id="add-medication-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('medications')">←</button>
-                <h1>Add Medication</h1>
+                <button class="back-button" onclick="showView('medications')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Add medication</h1>
             </div>
 
-            <form id="medication-form" onsubmit="saveMedication(event)">
+            <form id="medication-form" class="form" onsubmit="saveMedication(event)">
                 <div class="form-group">
-                    <label>Medication Name <span class="required">*</span></label>
+                    <label>Medication name <span class="required">*</span></label>
                     <input type="text" id="medication-name" required placeholder="Lisinopril, Metformin, etc.">
                 </div>
 
@@ -960,11 +1505,11 @@
 
                 <div class="form-group">
                     <label>Frequency</label>
-                    <input type="text" id="medication-frequency" placeholder="Once daily, Twice daily, etc.">
+                    <input type="text" id="medication-frequency" placeholder="Once daily, twice daily, etc.">
                 </div>
 
                 <div class="form-group">
-                    <label>Prescribing Doctor</label>
+                    <label>Prescribing doctor</label>
                     <select id="medication-doctor">
                         <option value="">Select a doctor (optional)...</option>
                     </select>
@@ -981,17 +1526,19 @@
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Medication Detail View -->
-        <div id="medication-detail-view" class="view">
+    <!-- Medication Detail View -->
+    <div id="medication-detail-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('medications')">←</button>
-                <h1>Medication Details</h1>
+                <button class="back-button" onclick="showView('medications')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Medication details</h1>
             </div>
 
             <div class="detail-section">
                 <div class="detail-row">
-                    <div class="detail-label">Medication Name</div>
+                    <div class="detail-label">Medication name</div>
                     <div class="detail-value" id="medication-detail-name"></div>
                 </div>
                 <div class="detail-row">
@@ -1003,7 +1550,7 @@
                     <div class="detail-value" id="medication-detail-frequency"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Prescribing Doctor</div>
+                    <div class="detail-label">Prescribing doctor</div>
                     <div class="detail-value" id="medication-detail-doctor"></div>
                 </div>
                 <div class="detail-row">
@@ -1013,21 +1560,23 @@
             </div>
 
             <div class="detail-actions">
-                <button class="btn btn-primary" onclick="editMedication()">Edit</button>
                 <button class="btn btn-danger" onclick="deleteMedication()">Delete</button>
+                <button class="btn btn-primary" onclick="editMedication()">Edit</button>
             </div>
         </div>
+    </div>
 
-        <!-- Edit Medication Form View -->
-        <div id="edit-medication-view" class="view">
+    <!-- Edit Medication Form View -->
+    <div id="edit-medication-view" class="view">
+<div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showMedicationDetail(currentMedicationId)">←</button>
-                <h1>Edit Medication</h1>
+                <button class="back-button" onclick="showMedicationDetail(currentMedicationId)" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <h1>Edit medication</h1>
             </div>
 
-            <form id="edit-medication-form" onsubmit="updateMedication(event)">
+            <form id="edit-medication-form" class="form" onsubmit="updateMedication(event)">
                 <div class="form-group">
-                    <label>Medication Name <span class="required">*</span></label>
+                    <label>Medication name <span class="required">*</span></label>
                     <input type="text" id="edit-medication-name" required placeholder="Lisinopril, Metformin, etc.">
                 </div>
 
@@ -1038,11 +1587,11 @@
 
                 <div class="form-group">
                     <label>Frequency</label>
-                    <input type="text" id="edit-medication-frequency" placeholder="Once daily, Twice daily, etc.">
+                    <input type="text" id="edit-medication-frequency" placeholder="Once daily, twice daily, etc.">
                 </div>
 
                 <div class="form-group">
-                    <label>Prescribing Doctor</label>
+                    <label>Prescribing doctor</label>
                     <select id="edit-medication-doctor">
                         <option value="">Select a doctor (optional)...</option>
                     </select>
@@ -1055,7 +1604,7 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="showMedicationDetail(currentMedicationId)">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
                 </div>
             </form>
         </div>
@@ -1146,7 +1695,9 @@
         // Update welcome message
         function updateWelcomeMessage() {
             if (currentUser) {
-                document.getElementById('welcome-message').textContent = `Welcome, ${currentUser.name}`;
+                const firstName = (currentUser.name || '').trim().split(/\s+/)[0] || 'there';
+                document.getElementById('welcome-message').innerHTML =
+                    `Welcome back, ${esc(firstName)}<span class="accent-dot">.</span>`;
             }
         }
 
@@ -1159,6 +1710,19 @@
 
             // Show the requested view
             document.getElementById(`${viewName}-view`).classList.add('active');
+
+            // Show/hide global topbar (hidden on auth screens)
+            const isAuth = viewName === 'login' || viewName === 'signup';
+            document.getElementById('global-topbar').style.display = isAuth ? 'none' : '';
+
+            // Update active menu item based on section
+            updateActiveMenuItem(viewName);
+
+            // Close menu if open
+            closeMenu();
+
+            // Scroll to top on view change
+            window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 
             // If showing doctors view, render the list
             if (viewName === 'doctors') {
@@ -1181,6 +1745,63 @@
             }
         }
 
+        // Map view name to top-level section for menu highlighting
+        function getSection(viewName) {
+            if (viewName === 'dashboard') return 'dashboard';
+            if (viewName.includes('doctor')) return 'doctors';
+            if (viewName.includes('visit')) return 'visits';
+            if (viewName.includes('medication')) return 'medications';
+            return null;
+        }
+
+        function updateActiveMenuItem(viewName) {
+            const section = getSection(viewName);
+            document.querySelectorAll('.brand-menu button[data-section]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.section === section);
+            });
+        }
+
+        function toggleMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('brand-menu');
+            const trigger = document.getElementById('brand-trigger');
+            const isOpen = menu.classList.toggle('open');
+            trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        function closeMenu() {
+            const menu = document.getElementById('brand-menu');
+            const trigger = document.getElementById('brand-trigger');
+            if (menu) menu.classList.remove('open');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function navTo(viewName) {
+            closeMenu();
+            showView(viewName);
+        }
+
+        // Close menu on outside click
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('brand-menu');
+            const trigger = document.getElementById('brand-trigger');
+            if (!menu || !menu.classList.contains('open')) return;
+            if (menu.contains(event.target) || trigger.contains(event.target)) return;
+            closeMenu();
+        });
+
+        // Close menu on Escape
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeMenu();
+        });
+
+        // Escape HTML to prevent injection in rendered lists
+        function esc(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
         // Render the doctors list
         function renderDoctors() {
             const listContainer = document.getElementById('doctor-list');
@@ -1188,20 +1809,24 @@
             if (doctors.length === 0) {
                 listContainer.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">👨‍⚕️</div>
-                        <h3>No doctors yet</h3>
-                        <p>Add your first doctor to get started</p>
+                        <div class="empty-state-content">
+                            <h3>No doctors yet</h3>
+                            <p>Add your first healthcare provider to start building your records.</p>
+                        </div>
                     </div>
                 `;
                 return;
             }
 
-            listContainer.innerHTML = doctors.map(doctor => `
-                <div class="doctor-item" onclick="showDoctorDetail(${doctor.id})" style="cursor: pointer;">
-                    <h3>${doctor.name}</h3>
-                    <p>${doctor.specialty || 'No specialty listed'}</p>
+            listContainer.innerHTML = `<div class="list">` + doctors.map(doctor => `
+                <div class="list-item" onclick="showDoctorDetail(${doctor.id})">
+                    <div class="list-item-main">
+                        <h3>${esc(doctor.name)}</h3>
+                        <div class="meta">${esc(doctor.specialty || 'No specialty listed')}</div>
+                    </div>
+                    <span class="chev">›</span>
                 </div>
-            `).join('');
+            `).join('') + `</div>`;
         }
 
         // Save a new doctor
@@ -1309,9 +1934,10 @@
             if (visits.length === 0) {
                 listContainer.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📅</div>
-                        <h3>No visits yet</h3>
-                        <p>Add your first visit to get started</p>
+                        <div class="empty-state-content">
+                            <h3>No visits yet</h3>
+                            <p>Log your first appointment to start tracking your visits.</p>
+                        </div>
                     </div>
                 `;
                 return;
@@ -1320,19 +1946,22 @@
             // Sort visits by date (most recent first)
             const sortedVisits = [...visits].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            listContainer.innerHTML = sortedVisits.map(visit => {
+            listContainer.innerHTML = `<div class="list">` + sortedVisits.map(visit => {
                 const doctor = doctors.find(d => d.id === visit.doctorId);
                 const doctorName = doctor ? doctor.name : 'Unknown Doctor';
                 const formattedDate = formatDate(visit.date);
 
                 return `
-                    <div class="visit-item" onclick="showVisitDetail(${visit.id})">
-                        <h3>${doctorName}</h3>
-                        <div class="visit-date">${formattedDate}</div>
-                        <div class="visit-reason">${visit.reason || 'No reason listed'}</div>
+                    <div class="list-item" onclick="showVisitDetail(${visit.id})">
+                        <div class="list-item-main">
+                            <div class="accent">${esc(formattedDate)}</div>
+                            <h3>${esc(doctorName)}</h3>
+                            <div class="meta">${esc(visit.reason || 'No reason listed')}</div>
+                        </div>
+                        <span class="chev">›</span>
                     </div>
                 `;
-            }).join('');
+            }).join('') + `</div>`;
         }
 
         // Format date for display
@@ -1485,9 +2114,10 @@
             if (medications.length === 0) {
                 listContainer.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">💊</div>
-                        <h3>No medications yet</h3>
-                        <p>Add your first medication to get started</p>
+                        <div class="empty-state-content">
+                            <h3>No medications yet</h3>
+                            <p>Add your first prescription to keep dosages and notes in one place.</p>
+                        </div>
                     </div>
                 `;
                 return;
@@ -1498,14 +2128,17 @@
                 a.name.localeCompare(b.name)
             );
 
-            listContainer.innerHTML = sortedMedications.map(medication => {
+            listContainer.innerHTML = `<div class="list">` + sortedMedications.map(medication => {
                 return `
-                    <div class="medication-item" onclick="showMedicationDetail(${medication.id})">
-                        <h3>${medication.name}</h3>
-                        <div class="medication-dosage">${medication.dosage || 'No dosage specified'}</div>
+                    <div class="list-item" onclick="showMedicationDetail(${medication.id})">
+                        <div class="list-item-main">
+                            <h3>${esc(medication.name)}</h3>
+                            <div class="meta">${esc(medication.dosage || 'No dosage specified')}${medication.frequency ? ' • ' + esc(medication.frequency) : ''}</div>
+                        </div>
+                        <span class="chev">›</span>
                     </div>
                 `;
-            }).join('');
+            }).join('') + `</div>`;
         }
 
         // Populate doctor dropdown for medications (with optional selection)
