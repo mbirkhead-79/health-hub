@@ -978,7 +978,56 @@
             .detail-actions { flex-direction: column-reverse; }
             .detail-actions .btn { width: 100%; }
         }
+
+        /* Sort / filter controls above list views */
+        .list-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .list-controls .control {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .list-controls .control label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .list-controls .control select {
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 200ms ease;
+        }
+
+        .list-controls .control select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Preserve user-entered line breaks in long-form notes */
+        #visit-detail-notes,
+        #medication-detail-notes {
+            white-space: pre-wrap;
+        }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4"></script>
 </head>
 <body>
     <!-- Global topbar (hidden on auth screens) -->
@@ -1380,6 +1429,24 @@
 
             <div class="add-button-row">
                 <button class="add-button" onclick="showAddVisit()">Add visit</button>
+            </div>
+
+            <div id="visits-controls" class="list-controls" style="display: none;">
+                <div class="control">
+                    <label for="visits-sort">Sort by</label>
+                    <select id="visits-sort" onchange="updateVisitsView()">
+                        <option value="date-desc">Date (newest first)</option>
+                        <option value="date-asc">Date (oldest first)</option>
+                        <option value="doctor">Doctor (A→Z)</option>
+                        <option value="specialty">Specialty (A→Z)</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <label for="visits-filter">Filter by specialty</label>
+                    <select id="visits-filter" onchange="updateVisitsView()">
+                        <option value="">All specialties</option>
+                    </select>
+                </div>
             </div>
 
             <div id="visit-list">
@@ -2147,8 +2214,10 @@
         // Render the visits list
         function renderVisits() {
             const listContainer = document.getElementById('visit-list');
+            const controls = document.getElementById('visits-controls');
 
             if (visits.length === 0) {
+                if (controls) controls.style.display = 'none';
                 listContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-content">
@@ -2160,25 +2229,85 @@
                 return;
             }
 
-            // Sort visits by date (most recent first)
-            const sortedVisits = [...visits].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (controls) controls.style.display = '';
+            populateVisitsFilter();
 
-            listContainer.innerHTML = `<div class="list">` + sortedVisits.map(visit => {
-                const doctor = doctors.find(d => d.id === visit.doctorId);
-                const doctorName = doctor ? doctor.name : 'Unknown Doctor';
-                const formattedDate = formatDate(visit.date);
+            const sortBy = document.getElementById('visits-sort')?.value || 'date-desc';
+            const filterSpecialty = document.getElementById('visits-filter')?.value || '';
 
+            let enriched = visits.map(v => {
+                const doctor = doctors.find(d => d.id === v.doctorId);
+                return {
+                    visit: v,
+                    doctorName: doctor ? doctor.name : 'Unknown Doctor',
+                    specialty: (doctor && doctor.specialty) || ''
+                };
+            });
+
+            if (filterSpecialty) {
+                enriched = enriched.filter(e => e.specialty === filterSpecialty);
+            }
+
+            if (sortBy === 'date-asc') {
+                enriched.sort((a, b) => new Date(a.visit.date) - new Date(b.visit.date));
+            } else if (sortBy === 'doctor') {
+                enriched.sort((a, b) => a.doctorName.localeCompare(b.doctorName));
+            } else if (sortBy === 'specialty') {
+                enriched.sort((a, b) => a.specialty.localeCompare(b.specialty));
+            } else {
+                enriched.sort((a, b) => new Date(b.visit.date) - new Date(a.visit.date));
+            }
+
+            if (enriched.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-content">
+                            <h3>No visits match this filter</h3>
+                            <p>Try a different specialty or clear the filter.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = `<div class="list">` + enriched.map(e => {
+                const formattedDate = formatDate(e.visit.date);
                 return `
-                    <div class="list-item" onclick="showVisitDetail(${visit.id})">
+                    <div class="list-item" onclick="showVisitDetail(${e.visit.id})">
                         <div class="list-item-main">
                             <div class="accent">${esc(formattedDate)}</div>
-                            <h3>${esc(doctorName)}</h3>
-                            <div class="meta">${esc(visit.reason || 'No reason listed')}</div>
+                            <h3>${esc(e.doctorName)}</h3>
+                            <div class="meta">${esc(e.visit.reason || 'No reason listed')}</div>
                         </div>
                         <span class="chev">›</span>
                     </div>
                 `;
             }).join('') + `</div>`;
+        }
+
+        // Populate the visit specialty-filter dropdown with specialties of doctors that have visits
+        function populateVisitsFilter() {
+            const select = document.getElementById('visits-filter');
+            if (!select) return;
+            const currentValue = select.value;
+            const visitDoctorIds = new Set(visits.map(v => v.doctorId));
+            const specialties = [...new Set(
+                doctors
+                    .filter(d => visitDoctorIds.has(d.id) && d.specialty)
+                    .map(d => d.specialty)
+            )].sort((a, b) => a.localeCompare(b));
+
+            select.innerHTML = '<option value="">All specialties</option>' +
+                specialties.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+
+            if (currentValue && specialties.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Re-render the visits list when sort/filter changes
+        function updateVisitsView() {
+            renderVisits();
         }
 
         // Format date for display
@@ -2228,7 +2357,11 @@
             }
 
             // Set default date to today
-            document.getElementById('visit-date').valueAsDate = new Date();
+            if (visitDatePicker) {
+                visitDatePicker.setDate(new Date(), false);
+            } else {
+                document.getElementById('visit-date').valueAsDate = new Date();
+            }
 
             showView('add-visit');
         }
@@ -2278,7 +2411,11 @@
             if (!visit) return;
 
             populateDoctorDropdown('edit-visit-doctor', visit.doctorId);
-            document.getElementById('edit-visit-date').value = visit.date;
+            if (editVisitDatePicker) {
+                editVisitDatePicker.setDate(visit.date, false);
+            } else {
+                document.getElementById('edit-visit-date').value = visit.date;
+            }
             document.getElementById('edit-visit-reason').value = visit.reason || '';
             document.getElementById('edit-visit-diagnosis').value = visit.diagnosis || '';
             document.getElementById('edit-visit-notes').value = visit.notes || '';
@@ -2475,7 +2612,20 @@
             }
         }
 
+        // Flatpickr instances for the visit date inputs (assigned in initDatePickers)
+        let visitDatePicker = null;
+        let editVisitDatePicker = null;
+
+        // Replace the native date inputs with flatpickr (graceful no-op if CDN didn't load)
+        function initDatePickers() {
+            if (typeof flatpickr === 'undefined') return;
+            const opts = { dateFormat: 'Y-m-d', allowInput: true };
+            visitDatePicker = flatpickr('#visit-date', opts);
+            editVisitDatePicker = flatpickr('#edit-visit-date', opts);
+        }
+
         // Initial render - check authentication
+        initDatePickers();
         checkAuth();
     </script>
 </body>
