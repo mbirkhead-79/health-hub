@@ -1299,7 +1299,7 @@
     <div id="doctors-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Doctors</h1>
             </div>
 
@@ -1326,7 +1326,7 @@
     <div id="doctor-detail-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('doctors')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1 id="detail-doctor-name">Doctor</h1>
             </div>
 
@@ -1467,7 +1467,7 @@
     <div id="visits-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Visits</h1>
             </div>
 
@@ -1551,7 +1551,7 @@
     <div id="visit-detail-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('visits')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>Visit details</h1>
             </div>
 
@@ -1633,7 +1633,7 @@
     <div id="medications-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('dashboard')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>My Medications</h1>
             </div>
 
@@ -1695,7 +1695,7 @@
     <div id="medication-detail-view" class="view">
 <div class="container">
             <div class="page-header">
-                <button class="back-button" onclick="showView('medications')" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
+                <button class="back-button" onclick="goBack()" aria-label="Back"><span aria-hidden="true">←</span> Back</button>
                 <h1>Medication details</h1>
             </div>
 
@@ -1981,7 +1981,63 @@
         }
 
         // Show a specific view
+        // ===== Navigation history (smart back) =====
+        const navStack = [];
+        const NAVIGABLE_VIEWS = new Set([
+            'dashboard', 'doctors', 'visits', 'medications',
+            'doctor-detail', 'visit-detail', 'medication-detail'
+        ]);
+        let suppressNavPush = false;
+
+        function getCurrentNavigable() {
+            const active = document.querySelector('.view.active');
+            if (!active) return null;
+            const view = active.id.replace(/-view$/, '');
+            if (!NAVIGABLE_VIEWS.has(view)) return null;
+            const entry = { view };
+            if (view === 'doctor-detail') entry.id = currentDoctorId;
+            else if (view === 'visit-detail') entry.id = currentVisitId;
+            else if (view === 'medication-detail') entry.id = currentMedicationId;
+            return entry;
+        }
+
+        function pushNavIfNeeded(targetView) {
+            if (suppressNavPush) return;
+            if (!NAVIGABLE_VIEWS.has(targetView)) return;
+            const current = getCurrentNavigable();
+            if (!current) return;
+            const last = navStack[navStack.length - 1];
+            if (last && last.view === current.view && last.id === current.id) return;
+            navStack.push(current);
+        }
+
+        function goBack() {
+            if (navStack.length === 0) {
+                suppressNavPush = true;
+                showView('dashboard');
+                return;
+            }
+            const prev = navStack.pop();
+            suppressNavPush = true;
+            if (prev.view === 'doctor-detail') {
+                showDoctorDetail(prev.id);
+            } else if (prev.view === 'visit-detail') {
+                showVisitDetail(prev.id);
+            } else if (prev.view === 'medication-detail') {
+                showMedicationDetail(prev.id);
+            } else {
+                showView(prev.view);
+            }
+        }
+
         function showView(viewName) {
+            // Reset history when entering auth screens
+            if (viewName === 'login' || viewName === 'signup') {
+                navStack.length = 0;
+            }
+            pushNavIfNeeded(viewName);
+            suppressNavPush = false;
+
             // Hide all views
             document.querySelectorAll('.view').forEach(view => {
                 view.classList.remove('active');
