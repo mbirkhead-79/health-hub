@@ -1025,6 +1025,36 @@
         #medication-detail-notes {
             white-space: pre-wrap;
         }
+
+        /* Sub-section heading inside a detail page */
+        .detail-section-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        /* Inline empty state for nested lists (e.g. visits under a doctor) */
+        .detail-section-empty {
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 8px 0;
+        }
+
+        /* "Upcoming" pill on visits whose date is today or in the future */
+        .badge-upcoming {
+            display: inline-block;
+            background: var(--accent);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4"></script>
@@ -1321,6 +1351,11 @@
                     <div class="detail-label">Phone</div>
                     <div class="detail-value" id="detail-phone"></div>
                 </div>
+            </div>
+
+            <div class="detail-section">
+                <h2 class="detail-section-title">Visits</h2>
+                <div id="doctor-visits-list"></div>
             </div>
 
             <div class="detail-actions">
@@ -2151,7 +2186,38 @@
             setDetailValue('detail-address', doctor.address);
             setPhoneDetail('detail-phone', doctor.phone);
 
+            renderDoctorVisits(doctorId);
+
             showView('doctor-detail');
+        }
+
+        // Render the visits associated with a doctor on the doctor detail page
+        function renderDoctorVisits(doctorId) {
+            const container = document.getElementById('doctor-visits-list');
+            const today = new Date().toISOString().slice(0, 10);
+
+            const doctorVisits = visits
+                .filter(v => v.doctorId === doctorId)
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+            if (doctorVisits.length === 0) {
+                container.innerHTML = `<div class="detail-section-empty">No visits logged with this doctor yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = `<div class="list">` + doctorVisits.map(visit => {
+                const isUpcoming = visit.date && visit.date >= today;
+                const badge = isUpcoming ? '<span class="badge-upcoming">Upcoming</span>' : '';
+                return `
+                    <div class="list-item" onclick="showVisitDetail(${visit.id})">
+                        <div class="list-item-main">
+                            <div class="accent">${esc(formatDate(visit.date))}${badge}</div>
+                            <div class="meta">${esc(visit.reason || 'No reason listed')}</div>
+                        </div>
+                        <span class="chev">›</span>
+                    </div>
+                `;
+            }).join('') + `</div>`;
         }
 
         // Helper to set detail value with empty state
