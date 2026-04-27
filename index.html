@@ -1277,6 +1277,15 @@
                 <button class="add-button" onclick="showView('add-doctor')">Add doctor</button>
             </div>
 
+            <div id="doctors-controls" class="list-controls" style="display: none;">
+                <div class="control">
+                    <label for="doctors-filter">Filter by specialty</label>
+                    <select id="doctors-filter" onchange="updateDoctorsView()">
+                        <option value="">All specialties</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="doctor-list">
                 <!-- Doctors will be rendered here -->
             </div>
@@ -2040,8 +2049,10 @@
         // Render the doctors list
         function renderDoctors() {
             const listContainer = document.getElementById('doctor-list');
+            const controls = document.getElementById('doctors-controls');
 
             if (doctors.length === 0) {
+                if (controls) controls.style.display = 'none';
                 listContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-content">
@@ -2053,7 +2064,27 @@
                 return;
             }
 
-            listContainer.innerHTML = `<div class="list">` + doctors.map(doctor => `
+            if (controls) controls.style.display = '';
+            populateDoctorsFilter();
+
+            const filterSpecialty = document.getElementById('doctors-filter')?.value || '';
+            const filtered = filterSpecialty
+                ? doctors.filter(d => d.specialty === filterSpecialty)
+                : doctors;
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-content">
+                            <h3>No doctors match this filter</h3>
+                            <p>Try a different specialty or clear the filter.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = `<div class="list">` + filtered.map(doctor => `
                 <div class="list-item" onclick="showDoctorDetail(${doctor.id})">
                     <div class="list-item-main">
                         <h3>${esc(doctor.name)}</h3>
@@ -2062,6 +2093,28 @@
                     <span class="chev">›</span>
                 </div>
             `).join('') + `</div>`;
+        }
+
+        // Populate the doctors specialty-filter with the unique specialties present in the list
+        function populateDoctorsFilter() {
+            const select = document.getElementById('doctors-filter');
+            if (!select) return;
+            const currentValue = select.value;
+            const specialties = [...new Set(
+                doctors.filter(d => d.specialty).map(d => d.specialty)
+            )].sort((a, b) => a.localeCompare(b));
+
+            select.innerHTML = '<option value="">All specialties</option>' +
+                specialties.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+
+            if (currentValue && specialties.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Re-render the doctors list when the filter changes
+        function updateDoctorsView() {
+            renderDoctors();
         }
 
         // Save a new doctor
