@@ -998,6 +998,7 @@
                 <button type="button" role="menuitem" data-section="medications" onclick="navTo('medications')">My Medications</button>
                 <div class="menu-separator" role="separator"></div>
                 <button type="button" role="menuitem" onclick="exportMyData()">Export my data</button>
+                <button type="button" role="menuitem" onclick="showView('change-password')">Change password</button>
                 <button type="button" role="menuitem" class="menu-logout" onclick="handleLogout()">Log out</button>
             </div>
         </div>
@@ -1069,6 +1070,42 @@
 
                 <div class="auth-footer">
                     Already have an account? <a href="#" onclick="showView('login'); return false;">Log in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password View -->
+    <div id="change-password-view" class="view">
+        <div class="auth-shell">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <span class="auth-eyebrow">Account</span>
+                    <h1>Change password<span class="accent-dot">.</span></h1>
+                    <p>Update the password on your Health Hub account.</p>
+                </div>
+
+                <form id="change-password-form" class="auth-form" onsubmit="handleChangePassword(event)">
+                    <div class="form-group">
+                        <label>Current password</label>
+                        <input type="password" id="change-pw-current" required placeholder="Enter your current password" autocomplete="current-password">
+                    </div>
+
+                    <div class="form-group">
+                        <label>New password</label>
+                        <input type="password" id="change-pw-new" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm new password</label>
+                        <input type="password" id="change-pw-confirm" required minlength="8" placeholder="Re-enter your new password" autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Update password</button>
+                </form>
+
+                <div class="auth-footer">
+                    <a href="#" onclick="showView('dashboard'); return false;">Cancel</a>
                 </div>
             </div>
         </div>
@@ -1624,6 +1661,32 @@
 
         // ==================== AUTH FUNCTIONS ====================
 
+        // Generate a random 16-byte salt as hex
+        function generateSalt() {
+            const arr = new Uint8Array(16);
+            crypto.getRandomValues(arr);
+            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // SHA-256 hash of (salt + password) as hex
+        async function hashPassword(password, salt) {
+            const data = new TextEncoder().encode(salt + password);
+            const buf = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Check a password against a user record (supports legacy plaintext)
+        async function verifyPassword(user, password) {
+            if (user.passwordHash !== undefined && user.passwordSalt !== undefined) {
+                const candidate = await hashPassword(password, user.passwordSalt);
+                return candidate === user.passwordHash;
+            }
+            if (user.password !== undefined) {
+                return user.password === password;
+            }
+            return false;
+        }
+
         // Check if user is logged in on page load
         function checkAuth() {
             if (currentUser) {
@@ -1635,27 +1698,36 @@
         }
 
         // Handle login
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
 
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
-                updateWelcomeMessage();
-                document.getElementById('login-form').reset();
-                showView('dashboard');
-            } else {
+            const user = users.find(u => u.email === email);
+            if (!user || !(await verifyPassword(user, password))) {
                 alert('Invalid email or password. Please try again or sign up for a new account.');
+                return;
             }
+
+            // Migrate legacy plaintext to hashed on successful login
+            if (user.password !== undefined && user.passwordHash === undefined) {
+                const salt = generateSalt();
+                user.passwordSalt = salt;
+                user.passwordHash = await hashPassword(password, salt);
+                delete user.password;
+                localStorage.setItem('healthhub_users', JSON.stringify(users));
+            }
+
+            currentUser = user;
+            localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
+            updateWelcomeMessage();
+            document.getElementById('login-form').reset();
+            showView('dashboard');
         }
 
         // Handle signup
-        function handleSignup(event) {
+        async function handleSignup(event) {
             event.preventDefault();
 
             const name = document.getElementById('signup-name').value;
@@ -1668,11 +1740,13 @@
                 return;
             }
 
+            const salt = generateSalt();
             const newUser = {
                 id: Date.now(),
                 name: name,
                 email: email,
-                password: password
+                passwordSalt: salt,
+                passwordHash: await hashPassword(password, salt)
             };
 
             users.push(newUser);
@@ -1683,6 +1757,59 @@
             localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
             updateWelcomeMessage();
             document.getElementById('signup-form').reset();
+            showView('dashboard');
+        }
+
+        // Handle change password
+        async function handleChangePassword(event) {
+            event.preventDefault();
+
+            if (!currentUser) {
+                alert('You must be logged in to change your password.');
+                return;
+            }
+
+            const currentPw = document.getElementById('change-pw-current').value;
+            const newPw = document.getElementById('change-pw-new').value;
+            const confirmPw = document.getElementById('change-pw-confirm').value;
+
+            const user = users.find(u => u.id === currentUser.id);
+            if (!user) {
+                alert('Account not found.');
+                return;
+            }
+
+            if (!(await verifyPassword(user, currentPw))) {
+                alert('Current password is incorrect.');
+                return;
+            }
+
+            if (newPw.length < 8) {
+                alert('New password must be at least 8 characters.');
+                return;
+            }
+
+            if (newPw !== confirmPw) {
+                alert("New passwords don't match.");
+                return;
+            }
+
+            if (newPw === currentPw) {
+                alert('New password must be different from your current password.');
+                return;
+            }
+
+            const salt = generateSalt();
+            user.passwordSalt = salt;
+            user.passwordHash = await hashPassword(newPw, salt);
+            delete user.password;
+
+            localStorage.setItem('healthhub_users', JSON.stringify(users));
+            currentUser = user;
+            localStorage.setItem('healthhub_currentUser', JSON.stringify(currentUser));
+
+            document.getElementById('change-password-form').reset();
+            alert('Password updated successfully.');
             showView('dashboard');
         }
 
