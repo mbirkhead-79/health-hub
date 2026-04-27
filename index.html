@@ -997,6 +997,7 @@
                 <button type="button" role="menuitem" data-section="visits" onclick="navTo('visits')">My Visits</button>
                 <button type="button" role="menuitem" data-section="medications" onclick="navTo('medications')">My Medications</button>
                 <div class="menu-separator" role="separator"></div>
+                <button type="button" role="menuitem" onclick="exportMyData()">Export my data</button>
                 <button type="button" role="menuitem" class="menu-logout" onclick="handleLogout()">Log out</button>
             </div>
         </div>
@@ -1683,6 +1684,32 @@
             updateWelcomeMessage();
             document.getElementById('signup-form').reset();
             showView('dashboard');
+        }
+
+        // Download all health data as a JSON file
+        function exportMyData() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                schemaVersion: 1,
+                source: 'health-hub',
+                user: currentUser ? { name: currentUser.name, email: currentUser.email } : null,
+                doctors,
+                visits,
+                medications
+            };
+
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const stamp = new Date().toISOString().slice(0, 10);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `health-hub-export-${stamp}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            closeMenu();
         }
 
         // Handle logout
