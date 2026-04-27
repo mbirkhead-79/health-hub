@@ -1272,6 +1272,20 @@
         </div>
     </div>
 
+    <!-- Shared specialty suggestions for add/edit doctor forms -->
+    <datalist id="specialty-options">
+        <option value="Breast Care Center">
+        <option value="Cardiologist">
+        <option value="Dentist">
+        <option value="Dermatologist">
+        <option value="Gynecologist">
+        <option value="Neurologist">
+        <option value="Optometrist">
+        <option value="Physical Therapist">
+        <option value="Primary Care Physician">
+        <option value="Vascular Surgeon">
+    </datalist>
+
     <!-- Add Doctor Form View -->
     <div id="add-doctor-view" class="view">
 <div class="container">
@@ -1298,12 +1312,12 @@
 
                 <div class="form-group">
                     <label>Phone number</label>
-                    <input type="tel" id="doctor-phone" placeholder="(555) 123-4567">
+                    <input type="tel" id="doctor-phone" placeholder="555-123-4567" oninput="formatPhoneInput(this)" inputmode="tel">
                 </div>
 
                 <div class="form-group">
                     <label>Specialty</label>
-                    <input type="text" id="doctor-specialty" placeholder="Family Medicine">
+                    <input type="text" id="doctor-specialty" list="specialty-options" placeholder="Start typing or pick from the list">
                 </div>
 
                 <div class="form-actions">
@@ -1340,12 +1354,12 @@
 
                 <div class="form-group">
                     <label>Phone number</label>
-                    <input type="tel" id="edit-doctor-phone" placeholder="(555) 123-4567">
+                    <input type="tel" id="edit-doctor-phone" placeholder="555-123-4567" oninput="formatPhoneInput(this)" inputmode="tel">
                 </div>
 
                 <div class="form-group">
                     <label>Specialty</label>
-                    <input type="text" id="edit-doctor-specialty" placeholder="Family Medicine">
+                    <input type="text" id="edit-doctor-specialty" list="specialty-options" placeholder="Start typing or pick from the list">
                 </div>
 
                 <div class="form-actions">
@@ -1992,7 +2006,7 @@
                 name: document.getElementById('doctor-name').value,
                 practice: document.getElementById('doctor-practice').value,
                 address: document.getElementById('doctor-address').value,
-                phone: document.getElementById('doctor-phone').value,
+                phone: formatPhone(document.getElementById('doctor-phone').value),
                 specialty: document.getElementById('doctor-specialty').value
             };
 
@@ -2015,7 +2029,7 @@
             setDetailValue('detail-specialty', doctor.specialty);
             setDetailValue('detail-practice', doctor.practice);
             setDetailValue('detail-address', doctor.address);
-            setDetailValue('detail-phone', doctor.phone);
+            setPhoneDetail('detail-phone', doctor.phone);
 
             showView('doctor-detail');
         }
@@ -2032,6 +2046,38 @@
             }
         }
 
+        // Format a phone number as XXX-XXX-XXXX (or 1-XXX-XXX-XXXX for 11-digit US)
+        function formatPhone(raw) {
+            const digits = (raw || '').replace(/\D/g, '');
+            if (digits.length === 11 && digits[0] === '1') {
+                return `1-${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+            }
+            if (digits.length <= 3) return digits;
+            if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+        }
+
+        // Live-format the phone input as the user types
+        function formatPhoneInput(el) {
+            el.value = formatPhone(el.value);
+        }
+
+        // Set the phone field on the detail view as a clickable tel: link
+        function setPhoneDetail(elementId, phone) {
+            const el = document.getElementById(elementId);
+            const digits = (phone || '').replace(/\D/g, '');
+            if (digits.length >= 10) {
+                el.innerHTML = `<a href="tel:${digits}">${esc(formatPhone(phone))}</a>`;
+                el.classList.remove('empty');
+            } else if (phone) {
+                el.textContent = phone;
+                el.classList.remove('empty');
+            } else {
+                el.textContent = 'Not provided';
+                el.classList.add('empty');
+            }
+        }
+
         // Edit doctor - populate form and show edit view
         function editDoctor() {
             const doctor = doctors.find(d => d.id === currentDoctorId);
@@ -2040,7 +2086,7 @@
             document.getElementById('edit-doctor-name').value = doctor.name;
             document.getElementById('edit-doctor-practice').value = doctor.practice || '';
             document.getElementById('edit-doctor-address').value = doctor.address || '';
-            document.getElementById('edit-doctor-phone').value = doctor.phone || '';
+            document.getElementById('edit-doctor-phone').value = formatPhone(doctor.phone || '');
             document.getElementById('edit-doctor-specialty').value = doctor.specialty || '';
 
             showView('edit-doctor');
@@ -2058,7 +2104,7 @@
                 name: document.getElementById('edit-doctor-name').value,
                 practice: document.getElementById('edit-doctor-practice').value,
                 address: document.getElementById('edit-doctor-address').value,
-                phone: document.getElementById('edit-doctor-phone').value,
+                phone: formatPhone(document.getElementById('edit-doctor-phone').value),
                 specialty: document.getElementById('edit-doctor-specialty').value
             };
 
