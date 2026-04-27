@@ -1022,7 +1022,8 @@
 
         /* Preserve user-entered line breaks in long-form notes */
         #visit-detail-notes,
-        #medication-detail-notes {
+        #medication-detail-notes,
+        #detail-doctor-notes {
             white-space: pre-wrap;
         }
 
@@ -1351,6 +1352,10 @@
                     <div class="detail-label">Phone</div>
                     <div class="detail-value" id="detail-phone"></div>
                 </div>
+                <div class="detail-row">
+                    <div class="detail-label">Notes</div>
+                    <div class="detail-value" id="detail-doctor-notes"></div>
+                </div>
             </div>
 
             <div class="detail-section">
@@ -1413,6 +1418,11 @@
                     <input type="text" id="doctor-specialty" list="specialty-options" placeholder="Start typing or pick from the list">
                 </div>
 
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="doctor-notes" placeholder="Bedside manner, office hours, billing contact, anything to remember..."></textarea>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="showView('doctors')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save</button>
@@ -1453,6 +1463,11 @@
                 <div class="form-group">
                     <label>Specialty</label>
                     <input type="text" id="edit-doctor-specialty" list="specialty-options" placeholder="Start typing or pick from the list">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="edit-doctor-notes" placeholder="Bedside manner, office hours, billing contact, anything to remember..."></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -2218,7 +2233,8 @@
                 practice: document.getElementById('doctor-practice').value,
                 address: document.getElementById('doctor-address').value,
                 phone: formatPhone(document.getElementById('doctor-phone').value),
-                specialty: document.getElementById('doctor-specialty').value
+                specialty: document.getElementById('doctor-specialty').value,
+                notes: document.getElementById('doctor-notes').value
             };
 
             doctors.push(doctor);
@@ -2241,6 +2257,7 @@
             setDetailValue('detail-practice', doctor.practice);
             setDetailValue('detail-address', doctor.address);
             setPhoneDetail('detail-phone', doctor.phone);
+            setDetailValue('detail-doctor-notes', doctor.notes);
 
             renderDoctorVisits(doctorId);
 
@@ -2347,6 +2364,7 @@
             document.getElementById('edit-doctor-address').value = doctor.address || '';
             document.getElementById('edit-doctor-phone').value = formatPhone(doctor.phone || '');
             document.getElementById('edit-doctor-specialty').value = doctor.specialty || '';
+            document.getElementById('edit-doctor-notes').value = doctor.notes || '';
 
             showView('edit-doctor');
         }
@@ -2364,7 +2382,8 @@
                 practice: document.getElementById('edit-doctor-practice').value,
                 address: document.getElementById('edit-doctor-address').value,
                 phone: formatPhone(document.getElementById('edit-doctor-phone').value),
-                specialty: document.getElementById('edit-doctor-specialty').value
+                specialty: document.getElementById('edit-doctor-specialty').value,
+                notes: document.getElementById('edit-doctor-notes').value
             };
 
             localStorage.setItem('healthhub_doctors', JSON.stringify(doctors));
